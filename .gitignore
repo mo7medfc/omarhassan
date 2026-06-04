@@ -1,0 +1,14 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
+
+# Logs / temp
+*.log
+.cache/
+
+# Env (if added later)
+.env
+.env.*

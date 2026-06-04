@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>makram | حالة الطلب</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=Cairo:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Tajawal', 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: #e2e8f0;
+        }
+        .container {
+            max-width: 500px;
+            width: 100%;
+        }
+        .brand {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .brand h1 {
+            font-size: 36px;
+            font-weight: 900;
+            color: #fff;
+            letter-spacing: 3px;
+        }
+        .brand p {
+            color: #45A5C4;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+        .card {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px;
+            overflow: hidden;
+        }
+        .status-header {
+            padding: 24px;
+            text-align: center;
+            position: relative;
+        }
+        .status-icon {
+            width: 64px; height: 64px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 12px;
+            font-size: 24px;
+        }
+        .status-label {
+            font-size: 20px;
+            font-weight: 800;
+        }
+        .info-section {
+            padding: 20px 24px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }
+        .info-section h3 {
+            font-size: 12px;
+            font-weight: 700;
+            color: #45A5C4;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+        }
+        .info-row:not(:last-child) {
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .info-label {
+            font-size: 13px;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+        .info-value {
+            font-size: 13px;
+            font-weight: 700;
+            color: #e2e8f0;
+        }
+        .product-item {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .product-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: #e2e8f0;
+        }
+        .product-detail {
+            font-size: 11px;
+            color: #64748b;
+            margin-top: 2px;
+        }
+        .product-price {
+            font-size: 14px;
+            font-weight: 800;
+            color: #45A5C4;
+            white-space: nowrap;
+        }
+        .price-summary {
+            background: linear-gradient(135deg, #45A5C4, #2E8BA8);
+            padding: 20px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .price-summary .label { font-size: 14px; color: rgba(255,255,255,0.8); font-weight: 600; }
+        .price-summary .amount { font-size: 24px; font-weight: 900; color: #fff; }
+        .timeline {
+            padding: 20px 24px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }
+        .timeline-item {
+            display: flex;
+            gap: 12px;
+            padding-bottom: 16px;
+            position: relative;
+        }
+        .timeline-item:not(:last-child)::before {
+            content: '';
+            position: absolute;
+            right: 11px;
+            top: 28px;
+            bottom: 0;
+            width: 2px;
+            background: rgba(255,255,255,0.08);
+        }
+        .timeline-item.active::before {
+            background: #45A5C4;
+        }
+        .timeline-dot {
+            width: 24px; height: 24px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 10px;
+            flex-shrink: 0;
+            border: 2px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.03);
+            color: #64748b;
+        }
+        .timeline-dot.done {
+            background: #45A5C4;
+            border-color: #45A5C4;
+            color: #fff;
+        }
+        .timeline-dot.current {
+            background: #f59e0b;
+            border-color: #f59e0b;
+            color: #fff;
+            animation: pulse 2s ease infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(245,158,11,0.4); }
+            50% { box-shadow: 0 0 0 8px rgba(245,158,11,0); }
+        }
+        .timeline-text {
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .timeline-text.done { color: #45A5C4; }
+        .timeline-text.current { color: #f59e0b; }
+        .timeline-text.pending { color: #475569; }
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+        }
+        .loading i {
+            font-size: 40px;
+            color: #45A5C4;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading p {
+            margin-top: 16px;
+            font-size: 15px;
+            color: #94a3b8;
+        }
+        .error-card {
+            text-align: center;
+            padding: 48px 24px;
+        }
+        .error-card i {
+            font-size: 48px;
+            color: #ef4444;
+            margin-bottom: 16px;
+        }
+        .error-card h2 {
+            font-size: 20px;
+            font-weight: 800;
+            color: #f1f5f9;
+            margin-bottom: 8px;
+        }
+        .error-card p {
+            color: #64748b;
+            font-size: 14px;
+        }
+        .deposit-bar-bg {
+            height: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+        .deposit-bar {
+            height: 100%;
+            border-radius: 10px;
+            background: linear-gradient(90deg, #45A5C4, #10b981);
+            transition: width 0.8s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="brand">
+            <h1>makram</h1>
+            <p>لجميع المطبوعات المتكاملة</p>
+        </div>
+        <div class="card" id="content">
+            <div class="loading">
+                <i class="fas fa-spinner"></i>
+                <p>جاري تحميل بيانات الطلب...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAGQ7WbksLIPpFT_58O4gsgkkOTB_NWiVk",
+            authDomain: "ragab-a1dab.firebaseapp.com",
+            projectId: "ragab-a1dab",
+            storageBucket: "ragab-a1dab.firebasestorage.app",
+            messagingSenderId: "835643523081",
+            appId: "1:835643523081:web:1d97ec9d266dc735fff8d8"
+        };
+
+        if (!firebase.apps || firebase.apps.length === 0) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+
+        const statusConfig = {
+            'pending':                    { text: 'قيد الإدخال',              icon: 'fa-clock',          bg: '#f59e0b', order: 1 },
+            'design':                     { text: 'في انتظار التصميم',        icon: 'fa-palette',        bg: '#8b5cf6', order: 2 },
+            'design_in_progress':         { text: 'جاري التصميم',            icon: 'fa-pen-ruler',      bg: '#8b5cf6', order: 3 },
+            'design_done':                { text: 'انتهى التصميم',           icon: 'fa-check-circle',   bg: '#10b981', order: 4 },
+            'awaiting_production_approval': { text: 'في انتظار موافقة التنفيذ', icon: 'fa-hourglass-half', bg: '#f59e0b', order: 5 },
+            'printing':                   { text: 'قيد التنفيذ',             icon: 'fa-print',          bg: '#3b82f6', order: 6 },
+            'in_printing_house':          { text: 'في المطبعة',              icon: 'fa-industry',       bg: '#3b82f6', order: 7 },
+            'ready_at_branch':            { text: 'جاهز في الفرع',           icon: 'fa-store',          bg: '#10b981', order: 8 },
+            'awaiting_shipping_approval': { text: 'في انتظار موافقة الشحن',   icon: 'fa-truck-loading',  bg: '#f59e0b', order: 9 },
+            'assigned_to_shipping':       { text: 'معتمد للشحن',             icon: 'fa-shipping-fast',  bg: '#6366f1', order: 10 },
+            'delivered':                  { text: 'تم التسليم',              icon: 'fa-box-open',       bg: '#10b981', order: 11 },
+            'customer_received':          { text: 'تم تسليم العميل',         icon: 'fa-handshake',      bg: '#10b981', order: 12 },
+            'collected':                  { text: 'تم التحصيل',              icon: 'fa-coins',          bg: '#10b981', order: 13 },
+            'fully_paid':                 { text: 'تم الدفع بالكامل',        icon: 'fa-check-double',   bg: '#10b981', order: 14 }
+        };
+
+        const productNames = {
+            'Banner': 'بانر', 'Flex': 'فليكس', 'Vinyl': 'فينيل', 'Offset': 'أوفست',
+            'Outdoor': 'أوت دور', 'Indoor': 'إندور', 'Stamps': 'أختام', 'BusinessCard': 'كروت شخصية',
+            'Envelopes': 'مظاريف', 'UVPrinting': 'طباعة UV', 'Tableaux': 'تابلوهات', 'DTF': 'طباعة DTF',
+            'Flag': 'أعلام', 'TShirt': 'تيشرتات', 'FabricBag': 'شنط قماش', 'IDCard': 'كارنيهات',
+            'ZikrMedal': 'مداليات أذكار', 'SublimationGift': 'هدايا سبلميشن', 'promotional_gifts': 'هدايا ترويجية',
+            'ruler_frames': 'برواز مسطرة', 'shipping_flyers_clear_bags': 'فلاير شحن', 'plastic_bags': 'شنط بلاستيك',
+            'paper_bags': 'شنط ورقية', 'brochures': 'برشورات', 'catalogs': 'كتالوجات',
+            'acrylic_badge': 'اكريلك و باج', 'boxes': 'بوكسات', 'Stands': 'استندات',
+            'custom': 'صنف مخصص', 'Offer': 'عرض'
+        };
+
+        // Timeline steps (simplified flow)
+        const timelineSteps = [
+            { key: 'pending', label: 'تم استلام الطلب' },
+            { key: 'design', label: 'التصميم' },
+            { key: 'printing', label: 'التنفيذ / الطباعة' },
+            { key: 'ready_at_branch', label: 'جاهز للاستلام' },
+            { key: 'delivered', label: 'تم التسليم' }
+        ];
+
+        // Map detailed statuses to timeline step
+        function getTimelineIndex(status) {
+            const map = {
+                'pending': 0,
+                'design': 1, 'design_in_progress': 1, 'design_done': 1,
+                'awaiting_production_approval': 2, 'printing': 2, 'in_printing_house': 2,
+                'ready_at_branch': 3, 'in_branch': 3,
+                'awaiting_shipping_approval': 4, 'assigned_to_shipping': 4,
+                'delivered': 4, 'customer_received': 4, 'collected': 4, 'fully_paid': 4
+            };
+            return map[status] ?? 0;
+        }
+
+        function esc(str) {
+            if (!str) return '';
+            const d = document.createElement('div');
+            d.textContent = str;
+            return d.innerHTML;
+        }
+
+        function formatCurrency(n) {
+            return Number(n || 0).toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ج.م';
+        }
+
+        async function loadOrder() {
+            const params = new URLSearchParams(window.location.search);
+            const orderId = params.get('id');
+            const content = document.getElementById('content');
+
+            if (!orderId) {
+                content.innerHTML = `<div class="error-card"><i class="fas fa-exclamation-triangle"></i><h2>لا يوجد رقم طلب</h2><p>تأكد من صحة رابط QR الممسوح</p></div>`;
+                return;
+            }
+
+            try {
+                // Try branch collection first
+                let doc = await db.collection('branches').doc('default').collection('orders').doc(orderId).get();
+                // Fallback to legacy collection
+                if (!doc.exists) {
+                    doc = await db.collection('orders').doc(orderId).get();
+                }
+
+                if (!doc.exists) {
+                    content.innerHTML = `<div class="error-card"><i class="fas fa-search"></i><h2>الطلب غير موجود</h2><p>رقم الطلب: #${esc(orderId.slice(-6))}</p></div>`;
+                    return;
+                }
+
+                const order = doc.data();
+                renderOrder(order, orderId);
+            } catch (e) {
+                console.error(e);
+                content.innerHTML = `<div class="error-card"><i class="fas fa-wifi"></i><h2>خطأ في الاتصال</h2><p>تعذر تحميل بيانات الطلب. حاول مرة أخرى.</p></div>`;
+            }
+        }
+
+        function renderOrder(order, orderId) {
+            const content = document.getElementById('content');
+            const st = statusConfig[order.status] || { text: order.status, icon: 'fa-question', bg: '#64748b' };
+            const orderDate = order.createdAt ? new Date(order.createdAt).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
+            const shortId = orderId.toString().slice(-6);
+            const totalPrice = order.price || 0;
+            const deposit = order.deposit || 0;
+            const remaining = Math.max(0, totalPrice - deposit);
+            const paidPercent = totalPrice > 0 ? Math.min(100, (deposit / totalPrice) * 100) : 0;
+            const currentIdx = getTimelineIndex(order.status);
+
+            // Products HTML
+            let productsHTML = '';
+            if (order.products && order.products.length > 0) {
+                productsHTML = order.products.map(p => {
+                    const name = p.isCustom ? (p.productName || 'صنف مخصص') : (productNames[p.type] || p.type);
+                    const price = p.sellingPrice != null ? p.sellingPrice : (p.price || 0);
+                    const qty = p.quantity || 1;
+                    return `<div class="product-item">
+                        <div>
+                            <div class="product-name">${esc(name)}</div>
+                            <div class="product-detail">الكمية: ${qty}${p.size ? ' • ' + esc(p.size) : ''}</div>
+                        </div>
+                        <div class="product-price">${formatCurrency(price)}</div>
+                    </div>`;
+                }).join('');
+            }
+
+            // Timeline HTML
+            const timelineHTML = timelineSteps.map((step, idx) => {
+                let cls = 'pending';
+                let dotCls = '';
+                if (idx < currentIdx) { cls = 'done'; dotCls = 'done'; }
+                else if (idx === currentIdx) { cls = 'current'; dotCls = 'current'; }
+                return `<div class="timeline-item ${idx < currentIdx ? 'active' : ''}">
+                    <div class="timeline-dot ${dotCls}">
+                        <i class="fas ${idx < currentIdx ? 'fa-check' : idx === currentIdx ? 'fa-circle' : 'fa-circle'}" style="font-size:${idx <= currentIdx ? '10px' : '6px'}"></i>
+                    </div>
+                    <div class="timeline-text ${cls}">${step.label}</div>
+                </div>`;
+            }).join('');
+
+            content.innerHTML = `
+                <!-- Status Header -->
+                <div class="status-header" style="background: linear-gradient(135deg, ${st.bg}22, ${st.bg}11)">
+                    <div class="status-icon" style="background:${st.bg}22; color:${st.bg}">
+                        <i class="fas ${st.icon}"></i>
+                    </div>
+                    <div class="status-label" style="color:${st.bg}">${esc(st.text)}</div>
+                    <div style="margin-top:8px;font-size:12px;color:#64748b">طلب رقم #${esc(shortId)}</div>
+                </div>
+
+                <!-- Order Info -->
+                <div class="info-section">
+                    <h3><i class="fas fa-info-circle"></i> معلومات الطلب</h3>
+                    <div class="info-row">
+                        <span class="info-label">العميل</span>
+                        <span class="info-value">${esc(order.clientName || '-')}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">الهاتف</span>
+                        <span class="info-value" dir="ltr">${esc(order.phone || '-')}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">التاريخ</span>
+                        <span class="info-value">${esc(orderDate)}</span>
+                    </div>
+                    ${order.details ? `<div class="info-row"><span class="info-label">ملاحظات</span><span class="info-value" style="max-width:60%;text-align:left">${esc(order.details)}</span></div>` : ''}
+                </div>
+
+                <!-- Products -->
+                ${productsHTML ? `
+                <div class="info-section">
+                    <h3><i class="fas fa-box"></i> المنتجات</h3>
+                    ${productsHTML}
+                </div>` : ''}
+
+                <!-- Payment -->
+                <div class="info-section">
+                    <h3><i class="fas fa-coins"></i> المدفوعات</h3>
+                    <div class="info-row">
+                        <span class="info-label">الإجمالي</span>
+                        <span class="info-value" style="color:#45A5C4;font-size:16px">${formatCurrency(totalPrice)}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">المدفوع (عربون)</span>
+                        <span class="info-value" style="color:#10b981">${formatCurrency(deposit)}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">المتبقي</span>
+                        <span class="info-value" style="color:${remaining > 0 ? '#ef4444' : '#10b981'}">${formatCurrency(remaining)}</span>
+                    </div>
+                    <div class="deposit-bar-bg">
+                        <div class="deposit-bar" style="width:${paidPercent}%"></div>
+                    </div>
+                    <div style="text-align:center;font-size:11px;color:#64748b;margin-top:6px">تم دفع ${Math.round(paidPercent)}% من الإجمالي</div>
+                </div>
+
+                <!-- Timeline -->
+                <div class="timeline">
+                    <h3 style="font-size:12px;font-weight:700;color:#45A5C4;margin-bottom:16px;display:flex;align-items:center;gap:6px">
+                        <i class="fas fa-route"></i> مسار الطلب
+                    </h3>
+                    ${timelineHTML}
+                </div>
+
+                <!-- Footer -->
+                <div style="text-align:center;padding:16px;border-top:1px solid rgba(255,255,255,0.06);font-size:11px;color:#475569">
+                    <p>makram — لجميع المطبوعات المتكاملة</p>
+                </div>
+            `;
+        }
+
+        loadOrder();
+    </script>
+</body>
+</html>
