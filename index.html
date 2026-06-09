@@ -159,6 +159,195 @@
             opacity: 0; transition: opacity 0.3s;
         }
         .stat-card:hover::after { opacity: 1; }
+
+        /* Wallet Dashboard */
+        .wallet-dash { display: flex; flex-direction: column; gap: 20px; }
+        .wallet-dash-header {
+            background: linear-gradient(135deg, #0F1B2D 0%, #1a2d47 55%, #243b55 100%);
+            border-radius: 22px; padding: 22px 26px; color: #fff;
+            display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px;
+            box-shadow: 0 18px 40px rgba(15,27,45,0.18);
+            position: relative; overflow: hidden;
+        }
+        .wallet-dash-header::before {
+            content: ''; position: absolute; top: -40%; right: -10%; width: 280px; height: 280px;
+            background: radial-gradient(circle, rgba(201,169,97,0.22) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .wallet-dash-header::after {
+            content: ''; position: absolute; bottom: -50%; left: 5%; width: 200px; height: 200px;
+            background: radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .wallet-dash-header > * { position: relative; z-index: 1; }
+        .wallet-dash-title { font-size: 1.35rem; font-weight: 900; letter-spacing: -0.02em; margin: 0 0 4px; }
+        .wallet-dash-sub { font-size: 12px; color: rgba(255,255,255,0.55); font-weight: 600; }
+        .wallet-dash-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+        .wallet-dash-btn {
+            display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px;
+            border-radius: 12px; font-size: 12px; font-weight: 800; border: none; cursor: pointer;
+            transition: all 0.25s ease; font-family: Tajawal, sans-serif;
+        }
+        .wallet-dash-btn-expense { background: rgba(239,68,68,0.15); color: #fecaca; border: 1px solid rgba(239,68,68,0.25); }
+        .wallet-dash-btn-expense:hover { background: #ef4444; color: #fff; transform: translateY(-1px); }
+        .wallet-dash-btn-report { background: linear-gradient(135deg, #C9A961, #A68B3E); color: #0F1B2D; box-shadow: 0 4px 14px rgba(201,169,97,0.35); }
+        .wallet-dash-btn-report:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(201,169,97,0.45); }
+        .wallet-dash-panel {
+            background: #fff; border-radius: 18px; border: 1px solid #eef2f6;
+            padding: 16px 18px; box-shadow: 0 1px 4px rgba(15,27,45,0.04);
+        }
+        .wallet-dash-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+        .wallet-dash-pill {
+            padding: 8px 14px; border-radius: 10px; font-size: 12px; font-weight: 800;
+            border: 1.5px solid #e8edf2; background: #f8fafc; color: #64748b;
+            cursor: pointer; transition: all 0.2s ease; font-family: Tajawal, sans-serif;
+        }
+        .wallet-dash-pill:hover { border-color: #C9A961; color: #0F1B2D; background: #fefdf8; }
+        .wallet-dash-pill.active {
+            background: linear-gradient(135deg, #C9A961, #A68B3E); border-color: transparent;
+            color: #0F1B2D; box-shadow: 0 4px 12px rgba(201,169,97,0.3);
+        }
+        .wallet-dash-dates {
+            display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+            padding-top: 12px; margin-top: 12px; border-top: 1px dashed #e8edf2;
+        }
+        .wallet-dash-dates label { font-size: 11px; font-weight: 700; color: #94a3b8; }
+        .wallet-dash-date-input {
+            padding: 8px 10px; border-radius: 10px; border: 1.5px solid #e8edf2;
+            background: #f8fafc; font-size: 12px; font-weight: 600; color: #334155;
+            outline: none; transition: border-color 0.2s; max-width: 140px; font-family: Tajawal, sans-serif;
+        }
+        .wallet-dash-date-input:focus { border-color: #C9A961; background: #fff; }
+        .wallet-dash-kpi {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
+        }
+        @media (min-width: 768px) { .wallet-dash-kpi { grid-template-columns: repeat(4, 1fr); } }
+        .wallet-kpi-card {
+            background: #fff; border-radius: 16px; padding: 18px 16px;
+            border: 1px solid #eef2f6; position: relative; overflow: hidden;
+            transition: all 0.25s ease; cursor: default;
+        }
+        .wallet-kpi-card.clickable { cursor: pointer; }
+        .wallet-kpi-card.clickable:hover {
+            transform: translateY(-3px); box-shadow: 0 12px 28px rgba(15,27,45,0.08);
+            border-color: rgba(201,169,97,0.25);
+        }
+        .wallet-kpi-card::before {
+            content: ''; position: absolute; top: 0; right: 0; width: 4px; height: 100%;
+            border-radius: 0 16px 16px 0;
+        }
+        .wallet-kpi-card.kpi-green::before { background: linear-gradient(180deg, #10b981, #059669); }
+        .wallet-kpi-card.kpi-red::before { background: linear-gradient(180deg, #f87171, #ef4444); }
+        .wallet-kpi-card.kpi-gold::before { background: linear-gradient(180deg, #C9A961, #A68B3E); }
+        .wallet-kpi-card.kpi-blue::before { background: linear-gradient(180deg, #6366f1, #4f46e5); }
+        .wallet-kpi-icon {
+            width: 40px; height: 40px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center; margin-bottom: 12px; font-size: 15px;
+        }
+        .wallet-kpi-value { font-size: 1.35rem; font-weight: 900; color: #0f172a; line-height: 1.2; letter-spacing: -0.02em; }
+        .wallet-kpi-label { font-size: 11px; font-weight: 700; color: #94a3b8; margin-top: 4px; }
+        .wallet-dash-section-title {
+            display: flex; align-items: center; justify-content: space-between; gap: 12px;
+            padding: 0 4px;
+        }
+        .wallet-dash-section-title h3 {
+            font-size: 15px; font-weight: 900; color: #0f172a; margin: 0;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .wallet-dash-section-title span { font-size: 11px; font-weight: 700; color: #94a3b8; }
+        .wallet-lux-grid {
+            display: grid; grid-template-columns: 1fr; gap: 16px;
+        }
+        @media (min-width: 640px) { .wallet-lux-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (min-width: 1024px) { .wallet-lux-grid { grid-template-columns: repeat(4, 1fr); } }
+        .wallet-lux-card {
+            position: relative; border-radius: 20px; overflow: hidden; cursor: pointer;
+            color: #fff; min-height: 172px;
+            transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s ease;
+            display: flex; flex-direction: column;
+            box-shadow: 0 6px 20px rgba(15,27,45,0.14);
+            --wallet-glow: rgba(201,169,97,0.45);
+        }
+        .wallet-lux-card:hover {
+            transform: translateY(-6px) scale(1.02);
+            box-shadow: 0 18px 40px var(--wallet-glow), 0 6px 16px rgba(15,27,45,0.12);
+        }
+        .wallet-lux-glow-spot {
+            position: absolute; top: -35%; right: -20%; width: 200px; height: 200px;
+            background: radial-gradient(circle, rgba(255,255,255,0.22) 0%, transparent 65%);
+            pointer-events: none; z-index: 1;
+            transition: opacity 0.35s ease;
+        }
+        .wallet-lux-card:hover .wallet-lux-glow-spot { opacity: 1.3; }
+        .wallet-lux-shine {
+            position: absolute; top: 0; left: -120%; width: 55%; height: 100%;
+            background: linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.22) 48%, rgba(255,255,255,0.08) 52%, transparent 70%);
+            pointer-events: none; z-index: 3;
+            transition: left 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .wallet-lux-card:hover .wallet-lux-shine { left: 130%; }
+        .wallet-lux-edge {
+            position: absolute; top: 0; left: 0; right: 0; height: 1px; z-index: 4;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent);
+            pointer-events: none;
+        }
+        .wallet-lux-body { position: relative; z-index: 2; padding: 18px 20px 12px; flex: 1; }
+        .wallet-lux-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+        .wallet-lux-icon {
+            width: 46px; height: 46px; border-radius: 13px;
+            background: rgba(255,255,255,0.2); backdrop-filter: blur(6px);
+            border: 1px solid rgba(255,255,255,0.28);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+            transition: transform 0.35s ease, background 0.35s ease, box-shadow 0.35s ease;
+        }
+        .wallet-lux-card:hover .wallet-lux-icon {
+            transform: scale(1.08);
+            background: rgba(255,255,255,0.32);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+        .wallet-lux-arrow-wrap {
+            width: 32px; height: 32px; border-radius: 10px;
+            background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.18);
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.35s ease;
+        }
+        .wallet-lux-arrow { font-size: 10px; color: rgba(255,255,255,0.65); transition: color 0.35s ease; }
+        .wallet-lux-card:hover .wallet-lux-arrow-wrap {
+            background: rgba(255,255,255,0.95);
+            transform: translateX(-3px);
+        }
+        .wallet-lux-card:hover .wallet-lux-arrow { color: #0F1B2D; }
+        .wallet-lux-balance {
+            font-size: 1.65rem; font-weight: 900; line-height: 1.15;
+            letter-spacing: -0.02em; margin: 0 0 4px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.12);
+            transition: text-shadow 0.35s ease;
+        }
+        .wallet-lux-card:hover .wallet-lux-balance { text-shadow: 0 2px 16px rgba(0,0,0,0.2); }
+        .wallet-lux-name { font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.82); margin: 0; }
+        .wallet-lux-foot {
+            position: relative; z-index: 2;
+            padding: 11px 20px; background: rgba(0,0,0,0.12);
+            backdrop-filter: blur(4px);
+            display: flex; align-items: center; justify-content: space-between;
+            font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.72);
+            border-top: 1px solid rgba(255,255,255,0.12);
+            transition: background 0.35s ease;
+        }
+        .wallet-lux-card:hover .wallet-lux-foot { background: rgba(0,0,0,0.18); }
+        .wallet-lux-foot .lux-link {
+            color: rgba(255,255,255,0.9);
+            transition: transform 0.35s ease, color 0.35s ease;
+        }
+        .wallet-lux-card:hover .wallet-lux-foot .lux-link { transform: translateX(-4px); color: #fff; }
+        .wallet-lux-header {
+            border-radius: 20px; padding: 22px 24px; color: #fff;
+            position: relative; overflow: hidden; margin-bottom: 16px;
+            box-shadow: 0 6px 20px rgba(15,27,45,0.14);
+        }
+        .wallet-lux-header .wallet-lux-glow-spot { top: -60%; right: -15%; width: 260px; height: 260px; }
         
         /* Order cards — slim row style */
         .order-card {
@@ -566,6 +755,9 @@
                 <a class="sidebar-link hidden-section" id="linkShipping" data-section="shipping" onclick="showSection('shipping')">
                     <i class="fas fa-truck-fast"></i><span>الشحن</span>
                 </a>
+                <a class="sidebar-link hidden-section" id="linkCatalog" data-section="catalog" onclick="showSection('catalog')">
+                    <i class="fas fa-store"></i><span>إدارة الكتالوج</span>
+                </a>
 
                 <div class="px-3 mt-5 mb-2 text-[10px] text-white/20 font-bold uppercase tracking-wider hidden-section" id="workerSectionLabel">التنفيذ</div>
                 <a class="sidebar-link hidden-section" id="linkExecution" data-section="execution" onclick="showSection('execution')">
@@ -873,6 +1065,19 @@
                     </div>
                 </section>
                 
+                <!-- ========== CATALOG ADMIN ========== -->
+                <section id="sectionCatalog" class="hidden-section space-y-4 fade-in">
+                    <div class="bg-white rounded-2xl p-6 border border-gray-100">
+                        <h3 class="font-bold text-gray-900 flex items-center gap-2 mb-2">
+                            <i class="fas fa-store text-accent"></i> إدارة الكتالوج
+                        </h3>
+                        <p class="text-xs text-gray-400 mb-4">أضف منتجات جديدة، عدّل الأسعار والشرائح والمواصفات بدون تعديل الكود</p>
+                        <div id="catalogAdminContent">
+                            <div class="text-center text-gray-400 py-12 text-sm"><i class="fas fa-spinner fa-spin text-2xl mb-2 block"></i> جاري التحميل...</div>
+                        </div>
+                    </div>
+                </section>
+
                 <!-- ========== USERS ========== -->
                 <section id="sectionUsers" class="hidden-section space-y-4 fade-in">
                     <div class="bg-white rounded-2xl p-6 border border-gray-100">
@@ -1364,10 +1569,11 @@
                         </div>
                         <div>
                             <label style="display:block;font-size:12px;font-weight:700;color:#94a3b8;margin-bottom:6px;">طريقة الدفع</label>
-                            <select name="paymentMethod" id="depositPaymentMethod" style="width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:13px;outline:none;font-family:Tajawal,sans-serif;" onchange="document.getElementById('transferScreenshotRow').style.display = (this.value==='instapay'||this.value==='wallet') ? '' : 'none'">
+                            <select name="paymentMethod" id="depositPaymentMethod" style="width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:13px;outline:none;font-family:Tajawal,sans-serif;" onchange="document.getElementById('transferScreenshotRow').style.display = (typeof WalletMgr!=='undefined' && WalletMgr.needsTransferScreenshot(this.value)) ? '' : 'none'">
                                 <option value="cash">نقدي</option>
                                 <option value="instapay">إنستاباي</option>
                                 <option value="wallet">محفظة</option>
+                                <option value="posta_visa">فيزا البريد</option>
                             </select>
                         </div>
                     </div>
@@ -1424,6 +1630,7 @@
                                     <option value="cash">نقدي</option>
                                     <option value="instapay">إنستاباي</option>
                                     <option value="wallet">محفظة</option>
+                                    <option value="posta_visa">فيزا البريد</option>
                                 </select>
                             </div>
                             <div>
@@ -1477,7 +1684,7 @@
                 <!-- Payment Method -->
                 <div>
                     <label class="block text-sm font-semibold text-gray-600 mb-2">طريقة الدفع</label>
-                    <div class="grid grid-cols-3 gap-2">
+                    <div class="grid grid-cols-2 gap-2">
                         <label class="cursor-pointer">
                             <input type="radio" name="qpPayment" value="cash" checked class="hidden peer" onchange="document.getElementById('qpTransferScreenshotRow').style.display='none'">
                             <div class="peer-checked:border-emerald-500 peer-checked:bg-emerald-50 border-2 border-gray-200 rounded-xl p-2.5 text-center transition hover:border-emerald-300">
@@ -1497,6 +1704,13 @@
                             <div class="peer-checked:border-emerald-500 peer-checked:bg-emerald-50 border-2 border-gray-200 rounded-xl p-2.5 text-center transition hover:border-emerald-300">
                                 <i class="fas fa-wallet text-emerald-600 mb-1 block"></i>
                                 <span class="text-xs font-bold text-gray-700">محفظة</span>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="qpPayment" value="posta_visa" class="hidden peer" onchange="document.getElementById('qpTransferScreenshotRow').style.display=''">
+                            <div class="peer-checked:border-emerald-500 peer-checked:bg-emerald-50 border-2 border-gray-200 rounded-xl p-2.5 text-center transition hover:border-emerald-300">
+                                <i class="fas fa-credit-card text-emerald-600 mb-1 block"></i>
+                                <span class="text-xs font-bold text-gray-700">فيزا البريد</span>
                             </div>
                         </label>
                     </div>
@@ -1519,6 +1733,89 @@
                     <i class="fas fa-check ml-2"></i> إضافة الطلب
                 </button>
             </form>
+        </div>
+    </div>
+
+    <!-- ===== ADD PRODUCT CHOICE MODAL ===== -->
+    <div id="addProductChoiceModal" class="fixed inset-0 z-[110] hidden-section bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div class="bg-primary p-4 px-6 flex justify-between items-center rounded-t-3xl">
+                <h3 class="text-white font-bold text-lg"><i class="fas fa-plus-circle text-accent ml-2"></i> إضافة صنف</h3>
+                <button onclick="closeModal('addProductChoiceModal')" class="text-gray-300 hover:text-white transition"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <div class="p-6 space-y-4">
+                <p class="text-center text-gray-500 text-sm mb-2">اختر طريقة إضافة المنتج</p>
+                <button onclick="closeModal('addProductChoiceModal'); ProductCatalog.openPicker();" class="w-full bg-gradient-to-l from-accent to-primary text-white p-5 rounded-2xl font-bold hover:shadow-lg transition flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-store text-2xl"></i>
+                    </div>
+                    <div class="text-right">
+                        <span class="block text-base">اختيار من الكتالوج</span>
+                        <span class="block text-xs text-white/70 mt-1">نوت بوك، ليترهيد، ومنتجات الكتالوج</span>
+                    </div>
+                </button>
+                <button onclick="closeModal('addProductChoiceModal'); openModal('customProductModal');" class="w-full bg-gradient-to-l from-emerald-500 to-emerald-700 text-white p-5 rounded-2xl font-bold hover:shadow-lg transition flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-pen-fancy text-2xl"></i>
+                    </div>
+                    <div class="text-right">
+                        <span class="block text-base">صنف مخصص</span>
+                        <span class="block text-xs text-white/70 mt-1">أدخل اسم الصنف والسعر يدوياً</span>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== CATALOG PICKER MODAL ===== -->
+    <div id="catalogPickerModal" class="fixed inset-0 z-[110] hidden-section bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl shadow-black/30 w-full max-w-5xl max-h-[90vh] overflow-y-auto ring-1 ring-black/5">
+            <div class="bg-gradient-to-l from-primary via-[#2a2a2a] to-[#3d3420] p-6 px-8 flex justify-between items-center sticky top-0 z-10 rounded-t-3xl border-b border-accent/20">
+                <div>
+                    <h3 class="text-white font-black text-2xl tracking-wide">كتالوج المنتجات</h3>
+                    <p class="text-accent/90 text-sm mt-1">اختر الصنف المطلوب</p>
+                </div>
+                <button onclick="closeModal('catalogPickerModal')" class="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 flex items-center justify-center transition"><i class="fas fa-times text-white text-lg"></i></button>
+            </div>
+            <div class="p-6 sm:p-8 bg-gradient-to-b from-gray-50 to-white">
+                <div id="catalogPickerGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-5 sm:gap-6"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== CATALOG SUBCATEGORY MODAL ===== -->
+    <div id="catalogSubcategoryModal" class="fixed inset-0 z-[110] hidden-section bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="rounded-3xl shadow-2xl shadow-black/50 w-full max-w-4xl max-h-[88vh] overflow-y-auto ring-1 ring-white/10 bg-[#0c0c12]">
+            <div class="bg-gradient-to-l from-[#12121a] via-primary to-[#2a2018] p-6 px-8 flex justify-between items-center sticky top-0 z-10 rounded-t-3xl border-b border-accent/15">
+                <div>
+                    <p class="text-accent/90 text-[10px] font-bold tracking-[0.2em] uppercase mb-1">كتالوج فاخر</p>
+                    <h3 class="text-white font-black text-xl tracking-wide" id="catalogSubcategoryTitle">القسم</h3>
+                    <p class="text-white/50 text-xs mt-1" id="catalogSubcategorySubtitle">اختر القسم الفرعي</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="ProductCatalog.backToPicker()" class="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/12 text-white/90 text-xs font-bold transition border border-white/10"><i class="fas fa-arrow-right ml-1"></i> رجوع</button>
+                    <button onclick="closeModal('catalogSubcategoryModal')" class="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/12 border border-white/10 flex items-center justify-center transition"><i class="fas fa-times text-white/80"></i></button>
+                </div>
+            </div>
+            <div class="p-8 bg-gradient-to-b from-[#0e0e16] via-[#12121c] to-[#0a0a10]">
+                <div id="catalogSubcategoryGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== CATALOG PRODUCT CONFIG MODAL ===== -->
+    <div id="catalogProductConfigModal" class="fixed inset-0 z-[110] hidden-section bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div class="bg-primary p-4 px-6 flex justify-between items-center sticky top-0 z-10 rounded-t-3xl">
+                <h3 class="text-white font-bold text-lg"><i class="fas fa-cog text-accent ml-2"></i> <span id="catalogConfigTitle">إعداد المنتج</span></h3>
+                <button onclick="closeModal('catalogProductConfigModal')" class="text-gray-300 hover:text-white transition"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <div class="p-6">
+                <div id="catalogConfigBody"></div>
+                <button type="button" onclick="ProductCatalog.confirmAdd()" class="w-full mt-4 bg-gradient-to-l from-accent to-primary text-white py-3.5 rounded-xl font-bold hover:shadow-lg transition">
+                    <i class="fas fa-check ml-2"></i> إضافة للطلب
+                </button>
+            </div>
         </div>
     </div>
 
@@ -1858,6 +2155,44 @@
         // ==========================================
         // Session Storage (uses different key to not conflict)
         // ==========================================
+        // Strip heavy blobs before localStorage / Firestore (prevents UI freeze)
+        const OrderSanitizer = {
+            _MAX_DATA_URL: 150000,
+            productPrice(p) {
+                return p.sellingPrice != null ? p.sellingPrice : (p.price || 0);
+            },
+            cleanProduct(p, forFirestore) {
+                if (!p || typeof p !== 'object') return p;
+                const cp = { ...p };
+                if (cp.designFileData) {
+                    if (!cp.designFileUrl) cp.designFileUrl = cp.designFileData;
+                    delete cp.designFileData;
+                }
+                if (forFirestore && cp.designFileUrl && cp.designFileUrl.startsWith('data:') && cp.designFileUrl.length > this._MAX_DATA_URL) {
+                    delete cp.designFileUrl;
+                    cp.hasDesignFile = false;
+                    cp.designFileName = (cp.designFileName || '') + ' (كبير — استخدم رابط)';
+                }
+                return cp;
+            },
+            cleanOrder(order, forFirestore) {
+                if (!order || typeof order !== 'object') return order;
+                const o = { ...order };
+                if (Array.isArray(o.products)) {
+                    o.products = o.products.map(p => this.cleanProduct(p, forFirestore));
+                }
+                if (forFirestore) {
+                    if (o.transferScreenshot && o.transferScreenshot.length > 500000) delete o.transferScreenshot;
+                    if (o.remainingScreenshot && o.remainingScreenshot.length > 500000) delete o.remainingScreenshot;
+                } else {
+                    delete o.transferScreenshot;
+                    delete o.remainingScreenshot;
+                }
+                return o;
+            }
+        };
+        window.OrderSanitizer = OrderSanitizer;
+
         const Session = {
             KEY: 'oh_session',
             ORDERS_CACHE: 'oh_orders_cache',
@@ -1878,14 +2213,31 @@
                 AppState.currentUser = null;
             },
             cacheOrders(orders) {
-                try { localStorage.setItem(this.ORDERS_CACHE, JSON.stringify(orders)); localStorage.setItem(this.ORDERS_TS, Date.now().toString()); } catch {}
+                try {
+                    const light = (orders || []).map(o => OrderSanitizer.cleanOrder(o, false));
+                    localStorage.setItem(this.ORDERS_CACHE, JSON.stringify(light));
+                    localStorage.setItem(this.ORDERS_TS, Date.now().toString());
+                } catch (e) {
+                    console.warn('cacheOrders skipped (storage full):', e);
+                    try { localStorage.removeItem(this.ORDERS_CACHE); localStorage.removeItem(this.ORDERS_TS); } catch (_) {}
+                }
             },
             getCachedOrders() {
                 try {
                     const ts = localStorage.getItem(this.ORDERS_TS);
                     if (!ts || (Date.now() - Number(ts)) > 10*60*1000) return null;
-                    return JSON.parse(localStorage.getItem(this.ORDERS_CACHE));
-                } catch { return null; }
+                    const raw = localStorage.getItem(this.ORDERS_CACHE);
+                    if (!raw) return null;
+                    if (raw.length > 2500000) {
+                        localStorage.removeItem(this.ORDERS_CACHE);
+                        localStorage.removeItem(this.ORDERS_TS);
+                        return null;
+                    }
+                    return JSON.parse(raw);
+                } catch {
+                    try { localStorage.removeItem(this.ORDERS_CACHE); localStorage.removeItem(this.ORDERS_TS); } catch (_) {}
+                    return null;
+                }
             }
         };
 
@@ -2031,14 +2383,16 @@
             getOrders() { return this._cache; },
             
             async addOrder(order) {
-                const data = { ...order, createdAt: order.createdAt || new Date().toISOString() };
+                const data = OrderSanitizer.cleanOrder({ ...order, createdAt: order.createdAt || new Date().toISOString() }, true);
                 this._cache.unshift(data);
                 this._cache.sort((a, b) => (b.id || 0) - (a.id || 0));
                 AppState.orders = this._cache;
                 Session.cacheOrders(this._cache);
                 
                 const ref = Branch.getCollection('orders').doc(order.id.toString());
-                await ref.set(data);
+                const savePromise = ref.set(data);
+                const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('انتهت مهلة الحفظ — تحقق من الاتصال')), 25000));
+                await Promise.race([savePromise, timeout]);
                 if (Branch.isDefault()) {
                     db.collection('orders').doc(order.id.toString()).set(data).catch(() => {});
                 }
@@ -2187,29 +2541,41 @@
         // Open new order modal (clears products)
         // ==========================================
         function openNewOrderModal() {
-            document.getElementById('newOrderForm').reset();
-            if (typeof OrderProducts !== 'undefined') OrderProducts.clear();
-            PhoneAutoComplete.reset();
-            // Reset edit mode
-            OrdersModule._editingOrderId = null;
-            OrdersModule._resetModalToAddMode();
-            // Populate createdBy selector for admin
-            const row = document.getElementById('orderCreatedByRow');
-            const sel = document.getElementById('orderCreatedBy');
-            if (AppState.currentUser?.role === 'admin' && row && sel) {
-                const users = UserSvc.getAll().filter(u => u.active !== false);
-                sel.innerHTML = users.map(u => `<option value="${u.username}" ${u.username === AppState.currentUser.username ? 'selected' : ''}>${u.name || u.username} (${u.role === 'admin' ? 'أدمن' : 'مبيعات'})</option>`).join('');
-                row.classList.remove('hidden-section');
-            } else if (row) {
-                row.classList.add('hidden-section');
+            try {
+                openModal('newOrderModal');
+                const form = document.getElementById('newOrderForm');
+                if (form) form.reset();
+                if (typeof OrderProducts !== 'undefined') OrderProducts.clear();
+                if (typeof PhoneAutoComplete !== 'undefined') PhoneAutoComplete.reset();
+                if (typeof OrdersModule !== 'undefined') {
+                    OrdersModule._editingOrderId = null;
+                    OrdersModule._resetModalToAddMode();
+                }
+                const row = document.getElementById('orderCreatedByRow');
+                const sel = document.getElementById('orderCreatedBy');
+                if (AppState.currentUser?.role === 'admin' && row && sel) {
+                    const users = (typeof UserSvc !== 'undefined' ? UserSvc.getAll() : []).filter(u => u.active !== false);
+                    sel.innerHTML = users.map(u => `<option value="${u.username}" ${u.username === AppState.currentUser.username ? 'selected' : ''}>${u.name || u.username} (${u.role === 'admin' ? 'أدمن' : 'مبيعات'})</option>`).join('');
+                    row.classList.remove('hidden-section');
+                } else if (row) {
+                    row.classList.add('hidden-section');
+                }
+                const isShip = document.getElementById('orderIsShipping');
+                const shipFields = document.getElementById('shippingFieldsSection');
+                const shipDot = document.getElementById('shippingToggleDot');
+                const shipTrack = document.getElementById('shippingToggleTrack');
+                if (isShip) isShip.value = '0';
+                if (shipFields) shipFields.style.display = 'none';
+                if (shipDot) shipDot.style.right = '2px';
+                if (shipTrack) shipTrack.style.background = '#e2e8f0';
+                if (typeof ShippingModule !== 'undefined') {
+                    if (!ShippingModule._loaded) ShippingModule.init().then(() => ShippingModule.injectCarrierOptions()).catch(() => ShippingModule.injectCarrierOptions());
+                    else ShippingModule.injectCarrierOptions();
+                }
+            } catch (err) {
+                console.error('openNewOrderModal:', err);
+                Swal.fire('خطأ', 'تعذر فتح نموذج الطلب. حدّث الصفحة وحاول مرة أخرى.', 'error');
             }
-            // Reset shipping toggle and inject carriers
-            document.getElementById('orderIsShipping').value = '0';
-            document.getElementById('shippingFieldsSection').style.display = 'none';
-            document.getElementById('shippingToggleDot').style.right = '2px';
-            document.getElementById('shippingToggleTrack').style.background = '#e2e8f0';
-            if (typeof ShippingModule !== 'undefined') ShippingModule.injectCarrierOptions();
-            openModal('newOrderModal');
         }
 
         // Toggle shipping section in new order modal
@@ -2254,7 +2620,7 @@
         let _customPricingMode = 'total'; // 'total', 'meter', 'cm', 'unit'
 
         function openAddProductChoice() {
-            openModal('customProductModal');
+            openModal('addProductChoiceModal');
         }
 
         function calcCustomArea() {
@@ -2478,11 +2844,15 @@
 
                 if (hasProducts) {
                     order.products.forEach((product, idx) => {
-                        let pName = product.isCustom ? (product.productName || 'صنف مخصص') : (productNames[product.type] || product.type);
+                        let pName = product.isCustom ? (product.productName || 'صنف مخصص') : (product.type === 'catalog' ? (product.productName || product.catalogName) : (productNames[product.type] || product.type));
                         let size = '-', quantity = '1', details = '';
                         const sp = product.sellingPrice != null ? product.sellingPrice : product.price;
 
-                        if (product.isCustom || product.type === 'custom') {
+                        if (product.type === 'catalog') {
+                            size = '-';
+                            quantity = (product.quantity || 1).toString();
+                            details = (product.catalogSpecsText || '') + (product.unitPrice ? ` | ${product.unitLabel || 'سعر الوحدة'}: ${Number(product.unitPrice).toFixed(2)}` : '');
+                        } else if (product.isCustom || product.type === 'custom') {
                             size = product.size || '-';
                             quantity = (product.quantity || 1).toString();
                             details = product.unitPrice ? `سعر القطعة: ${Number(product.unitPrice).toFixed(2)} ج.م` : '';
@@ -2511,6 +2881,9 @@
                             <td style="border:1px solid #e5e7eb;padding:8px 10px;font-size:11px;color:#888">${this.escapeHTML(details)}</td>
                             <td style="border:1px solid #e5e7eb;padding:8px 10px;font-weight:700;color:#C9A961;font-size:13px">${Number(sp||0).toFixed(2)} ج.م</td>
                         </tr>`;
+                        if (product.hasDesignFile || product.designFileUrl) {
+                            productsRows += `<tr><td colspan="5" style="border:1px solid #e5e7eb;padding:4px 10px;font-size:10px"><button type="button" data-design-product="${idx}" class="oh-design-btn" style="background:#C9A961;color:white;border:none;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:10px"><i class="fas fa-palette"></i> ملف التصميم — ${this.escapeHTML(product.designFileName || 'تحميل')}</button></td></tr>`;
+                        }
                         totalBasePrice += (sp || 0);
                     });
                 }
@@ -2551,7 +2924,7 @@
                         <div style="flex:1;background:#f8fafb;border:1px solid #e8eef1;border-radius:10px;padding:12px">
                             <h3 style="font-size:12px;font-weight:700;color:#C9A961;border-bottom:1px solid #e0e0e0;padding-bottom:4px;margin:0 0 8px">حالة الطلب</h3>
                             <p style="margin:3px 0;font-size:12px"><strong>الحالة:</strong> ${this.escapeHTML(statusTexts[order.status]||order.status)}</p>
-                            <p style="margin:3px 0;font-size:12px"><strong>الدفع:</strong> ${this.escapeHTML(order.paymentMethod||'نقدي')}</p>
+                            <p style="margin:3px 0;font-size:12px"><strong>الدفع:</strong> ${this.escapeHTML((typeof WalletMgr !== 'undefined' ? WalletMgr.getLabel(order.paymentMethod || 'cash') : (order.paymentMethod || 'نقدي')))}</p>
                             <p style="margin:3px 0;font-size:12px"><strong>بواسطة:</strong> ${this.escapeHTML((UserSvc.getByUsername(order.createdBy)||{}).name || order.createdBy || '')}</p>
                         </div>
                     </div>
@@ -2562,7 +2935,7 @@
                         <div style="display:flex;gap:12px;flex-wrap:wrap">
                             <p style="margin:3px 0;font-size:12px;flex:1;min-width:140px"><strong>شركة/مندوب:</strong> ${this.escapeHTML(order.shippingCarrierName || order.shippingCarrierId || '-')}</p>
                             <p style="margin:3px 0;font-size:12px;flex:1;min-width:140px"><strong>تكلفة الشحن:</strong> <span style="color:#4f46e5;font-weight:700">${(order.shippingCost||0).toFixed(2)} ج.م</span></p>
-                            <p style="margin:3px 0;font-size:12px;flex:1;min-width:140px"><strong>محفظة الشحن:</strong> ${order.shippingWallet === 'cash' ? 'نقدي' : order.shippingWallet === 'instapay' ? 'إنستاباي' : 'محفظة'}</p>
+                            <p style="margin:3px 0;font-size:12px;flex:1;min-width:140px"><strong>محفظة الشحن:</strong> ${(typeof WalletMgr !== 'undefined' ? WalletMgr.getLabel(order.shippingWallet || 'cash') : (order.shippingWallet || 'نقدي'))}</p>
                             ${order.shippingAddress ? `<p style="margin:3px 0;font-size:12px;width:100%"><strong>العنوان:</strong> ${this.escapeHTML(order.shippingAddress)}</p>` : ''}
                         </div>
                     </div>` : ''}
@@ -2602,7 +2975,13 @@
                     </div>
                 </div>`;
 
+                this._currentOrderProducts = order.products || [];
                 document.getElementById('ohInvoiceContent').innerHTML = html;
+                document.querySelectorAll('#ohInvoiceContent .oh-design-btn').forEach(btn => {
+                    const idx = parseInt(btn.getAttribute('data-design-product'), 10);
+                    const prod = this._currentOrderProducts[idx];
+                    if (prod) btn.onclick = () => openProductDesignFile(prod);
+                });
                 openModal('ohInvoiceModal');
             },
 
@@ -3107,11 +3486,25 @@
         window.ImageHelper = ImageHelper;
 
         const _prodNames = {
-            'Banner':'بانر','Flex':'فليكس','Vinyl':'فينيل','Offset':'أوفست','Outdoor':'أوت دور','Indoor':'إندور','Stands':'استندات','Stamps':'الأختام','BusinessCard':'كروت شخصية','Envelopes':'المظاريف','UVPrinting':'طباعة UV','Tableaux':'تابلوهات','DTF':'طباعة DTF','Flag':'أعلام','TShirt':'تيشرتات','FabricBag':'شنط قماش','IDCard':'الكارنيهات','ZikrMedal':'مدليات الأذكار','SublimationGift':'هدايا سبلميشن','promotional_gifts':'هدايا ترويجية','ruler_frames':'برواز مسطرة','shipping_flyers_clear_bags':'فلاير شحن وأكياس شفافة','plastic_bags':'شنط بلاستيك','inkjet_paper_printing':'طباعة إنك جيت ورق','safety_printing':'السيفتي بالطباعة','digital_printing':'قسم الدجيتال','paper_bags':'شنط ورقية','brochures':'برشورات','catalogs':'كتالوجات','acrylic_badge':'اكريلك و باغ','card_rosary':'كارت بسبحة','annual_ads':'دعاية سنوية','cup_quran_bags':'كوباية–مصاحف–شنط سبوع','boxes':'بوكسات','cladding_letters':'واجهات كلادينج و حروف','kraft_bags':'شنط كرافت','Offer':'عرض','custom':'صنف مخصص'
+            'Banner':'بانر','Flex':'فليكس','Vinyl':'فينيل','Offset':'أوفست','Outdoor':'أوت دور','Indoor':'إندور','Stands':'استندات','Stamps':'الأختام','BusinessCard':'كروت شخصية','Envelopes':'المظاريف','UVPrinting':'طباعة UV','Tableaux':'تابلوهات','DTF':'طباعة DTF','Flag':'أعلام','TShirt':'تيشرتات','FabricBag':'شنط قماش','IDCard':'الكارنيهات','ZikrMedal':'مدليات الأذكار','SublimationGift':'هدايا سبلميشن','promotional_gifts':'هدايا ترويجية','ruler_frames':'برواز مسطرة','shipping_flyers_clear_bags':'فلاير شحن وأكياس شفافة','plastic_bags':'شنط بلاستيك','inkjet_paper_printing':'طباعة إنك جيت ورق','safety_printing':'السيفتي بالطباعة','digital_printing':'قسم الدجيتال','paper_bags':'شنط ورقية','brochures':'برشورات','catalogs':'كتالوجات','acrylic_badge':'اكريلك و باغ','card_rosary':'كارت بسبحة','annual_ads':'دعاية سنوية','cup_quran_bags':'كوباية–مصاحف–شنط سبوع','boxes':'بوكسات','cladding_letters':'واجهات كلادينج و حروف','kraft_bags':'شنط كرافت',            'Offer':'عرض','custom':'صنف مخصص','catalog':'كتالوج'
         };
         function getProductDetailText(p) {
             const t = p.type;
-            if (t === 'custom' || p.isCustom) {
+            if (t === 'catalog') {
+                const parts = [];
+                if (p.catalogGroupName) {
+                    parts.push('القسم الرئيسي: ' + p.catalogGroupName);
+                    if (p.catalogSubcategoryName) parts.push('القسم الفرعي: ' + p.catalogSubcategoryName);
+                    parts.push('المنتج: ' + (p.productName || ''));
+                } else {
+                    parts.push(p.productName || p.catalogName || 'منتج كتالوج');
+                    if (p.catalogSpecsText) parts.push(p.catalogSpecsText);
+                    else if (p.catalogSpecs) parts.push(Object.values(p.catalogSpecs).map(s => s.display || s.value).join('، '));
+                }
+                parts.push('الكمية: ' + (p.quantity || 1));
+                if (p.unitPrice) parts.push((p.unitLabel || 'سعر الوحدة') + ': ' + Number(p.unitPrice).toFixed(2) + ' ج.م');
+                return parts.join(' | ');
+            } else if (t === 'custom' || p.isCustom) {
                 const parts = [p.productName || 'صنف مخصص'];
                 if (p.size) parts.push(p.size);
                 if (p.quantity > 1) parts.push('الكمية: ' + p.quantity);
@@ -3212,7 +3605,7 @@
 
         function getProductsSummary(order) {
             if (order.products && Array.isArray(order.products) && order.products.length > 0) {
-                return order.products.map(p => p.name || p.productName || (p.type !== 'custom' ? p.type : null) || 'منتج').join('، ');
+                return order.products.map(p => p.type === 'catalog' ? (p.productName || p.catalogName) : (p.name || p.productName || (p.type !== 'custom' ? p.type : null) || 'منتج')).join('، ');
             }
             return order.details || 'بدون تفاصيل';
         }
@@ -3237,6 +3630,7 @@
                 } catch (e) {
                     console.warn('WalletMgr init:', e.message);
                     this._initialized = true;
+                    this._injectOptions();
                 }
             },
 
@@ -3244,8 +3638,45 @@
                 return [
                     { value: 'cash', label: 'نقدي' },
                     { value: 'instapay', label: 'إنستاباي' },
-                    { value: 'wallet', label: 'محفظة' }
+                    { value: 'wallet', label: 'محفظة' },
+                    { value: 'posta_visa', label: 'فيزا البريد' }
                 ];
+            },
+
+            builtInKeys() {
+                return this.builtIn().map(w => w.value);
+            },
+
+            mainWalletKeys() {
+                return this.builtInKeys();
+            },
+
+            getWalletNamesMap() {
+                const m = {};
+                this.allOptions().forEach(o => { m[o.value] = o.label; });
+                return m;
+            },
+
+            getBuiltInMeta() {
+                return {
+                    cash:       { name: 'نقدي',       icon: 'fas fa-money-bill-wave', color: 'emerald', gradient: 'from-emerald-500 to-emerald-600' },
+                    instapay:   { name: 'إنستاباي',   icon: 'fas fa-bolt',            color: 'violet',  gradient: 'from-violet-500 to-violet-600' },
+                    wallet:     { name: 'محفظة',      icon: 'fas fa-wallet',          color: 'blue',    gradient: 'from-blue-500 to-blue-600' },
+                    posta_visa: { name: 'فيزا البريد', icon: 'fas fa-credit-card',    color: 'rose',    gradient: 'from-rose-500 to-pink-600' }
+                };
+            },
+
+            getCustomWallets() {
+                return this._customWallets || [];
+            },
+
+            needsTransferScreenshot(value) {
+                return value === 'instapay' || value === 'wallet' || value === 'posta_visa';
+            },
+
+            getFaIcon(value) {
+                const icons = { cash: 'money-bill-wave', instapay: 'bolt', wallet: 'wallet', posta_visa: 'credit-card' };
+                return icons[value] || 'building-columns';
             },
 
             allOptions() {
@@ -3261,7 +3692,7 @@
             },
 
             _injectOptions() {
-                ['depositPaymentMethod', 'remainingWalletSelect'].forEach(id => {
+                ['depositPaymentMethod', 'remainingWalletSelect', 'orderShippingWallet'].forEach(id => {
                     const el = document.getElementById(id);
                     if (!el) return;
                     const cur = el.value;
@@ -4165,7 +4596,8 @@
                 'digitalPricing': 'التسعير',
                 'warnings': 'التحذيرات',
                 'suppliers': 'الموردين',
-                'shipping': 'الشحن'
+                'shipping': 'الشحن',
+                'catalog': 'إدارة الكتالوج'
             };
             document.getElementById('pageTitle').textContent = titles[name] || name;
             AppState.currentSection = name;
@@ -4188,6 +4620,9 @@
             if (name === 'warnings') WarningsModule.populateUserSelect();
             if (name === 'suppliers') SuppliersModule.render();
             if (name === 'shipping') ShippingModule.render();
+            if (name === 'catalog' && typeof ProductCatalog !== 'undefined') {
+                CatalogSvc.init().then(() => ProductCatalog.renderAdmin()).catch(e => console.error('Catalog render:', e));
+            }
             if (name === 'dashboard' && AppState.currentUser?.role === 'worker') WorkerModule.renderDashboard();
             
             // Close mobile sidebar
@@ -5264,6 +5699,7 @@
                 
                 const remaining = (o.price || 0) - (o.deposit || 0);
                 const products = o.products && Array.isArray(o.products) ? o.products : [];
+                AppState._detailProducts = products;
                 
                 c.innerHTML = `
                     <div class="grid grid-cols-2 gap-4">
@@ -5302,16 +5738,19 @@
                     <div class="bg-gray-50 p-4 rounded-xl">
                         <p class="text-xs text-gray-400 mb-2">المنتجات</p>
                         <div class="space-y-2">
-                            ${products.map(p => {
-                                const typeName = _prodNames[p.type] || p.name || p.productName || p.type || 'منتج';
+                            ${products.map((p, pi) => {
+                                const typeName = p.type === 'catalog' ? (p.productName || p.catalogName) : (_prodNames[p.type] || p.name || p.productName || p.type || 'منتج');
                                 const detail = getProductDetailText(p);
+                                const hasDesign = p.hasDesignFile || p.designFileUrl;
+                                const designBtn = hasDesign ? `<button type="button" onclick="openProductDesignFile(AppState._detailProducts[${pi}])" class="mt-2 text-[10px] bg-accent/10 text-accent px-2 py-1 rounded-lg font-bold hover:bg-accent/20 transition"><i class="fas fa-palette ml-1"></i> ملف التصميم</button>` : '';
                                 return `
                                 <div class="bg-white p-3 rounded-lg border border-gray-100">
                                     <div class="flex items-center justify-between mb-1">
                                         <span class="font-bold text-gray-800 text-sm"><i class="fas fa-box text-accent/50 ml-1 text-xs"></i> ${typeName}</span>
-                                        <span class="text-accent font-black text-sm">${formatCurrency(p.price || 0)}</span>
+                                        <span class="text-accent font-black text-sm">${formatCurrency(p.sellingPrice != null ? p.sellingPrice : (p.price || 0))}</span>
                                     </div>
                                     <p class="text-xs text-gray-500 leading-relaxed">${detail}</p>
+                                    ${designBtn}
                                 </div>`;
                             }).join('')}
                         </div>
@@ -5331,12 +5770,12 @@
                         <div class="bg-green-50 p-4 rounded-xl text-center">
                             <p class="text-xs text-gray-400 mb-1">المدفوع</p>
                             <p class="font-black text-green-600">${formatCurrency(o.deposit)}</p>
-                            <p class="text-[10px] text-green-500 mt-0.5"><i class="fas fa-${o.paymentMethod==='instapay'?'bolt':o.paymentMethod==='wallet'?'wallet':'money-bill-wave'} ml-0.5"></i> ${{cash:'نقدي',instapay:'إنستاباي',wallet:'محفظة'}[o.paymentMethod]||'نقدي'}</p>
+                            <p class="text-[10px] text-green-500 mt-0.5"><i class="fas fa-${WalletMgr.getFaIcon(o.paymentMethod||'cash')} ml-0.5"></i> ${WalletMgr.getLabel(o.paymentMethod||'cash')}</p>
                         </div>
                         <div class="bg-red-50 p-4 rounded-xl text-center">
                             <p class="text-xs text-gray-400 mb-1">المتبقي</p>
                             <p class="font-black ${remaining > 0 ? 'text-red-500' : 'text-green-500'}">${formatCurrency(remaining)}</p>
-                            ${remaining > 0 && o.remainingWallet ? `<p class="text-[10px] text-gray-500 mt-0.5"><i class="fas fa-${o.remainingWallet==='instapay'?'bolt':o.remainingWallet==='wallet'?'wallet':'money-bill-wave'} ml-0.5"></i> ${{cash:'نقدي',instapay:'إنستاباي',wallet:'محفظة'}[o.remainingWallet]||''}</p>` : remaining > 0 ? '<p class="text-[10px] text-gray-400 mt-0.5">لم يُحدد بعد</p>' : ''}
+                            ${remaining > 0 && o.remainingWallet ? `<p class="text-[10px] text-gray-500 mt-0.5"><i class="fas fa-${WalletMgr.getFaIcon(o.remainingWallet)} ml-0.5"></i> ${WalletMgr.getLabel(o.remainingWallet)}</p>` : remaining > 0 ? '<p class="text-[10px] text-gray-400 mt-0.5">لم يُحدد بعد</p>' : ''}
                         </div>
                     </div>
                     
@@ -5473,12 +5912,12 @@
                                     </div>
                                     <div id="swalCollFields">
                                         <label style="font-size:13px;font-weight:700;color:#555;display:block;margin-bottom:4px">المحفظة</label>
-                                        <select id="swalDeliveryWallet" onchange="document.getElementById('swalDeliveryScreenRow').style.display=(this.value==='instapay'||this.value==='wallet')?'':'none'" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:12px">
+                                        <select id="swalDeliveryWallet" onchange="document.getElementById('swalDeliveryScreenRow').style.display=(WalletMgr.needsTransferScreenshot(this.value))?'':'none'" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:12px">
                                             ${WalletMgr.buildOptionsHTML(order.remainingWallet || 'cash')}
                                         </select>
                                         <label style="font-size:13px;font-weight:700;color:#555;display:block;margin-bottom:4px">تاريخ التحصيل</label>
                                         <input type="date" id="swalCollDate" value="${todayStr}" max="${todayStr}" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:12px">
-                                        <div id="swalDeliveryScreenRow" style="display:${(order.remainingWallet === 'instapay' || order.remainingWallet === 'wallet') ? '' : 'none'}">
+                                        <div id="swalDeliveryScreenRow" style="display:${WalletMgr.needsTransferScreenshot(order.remainingWallet || 'cash') ? '' : 'none'}">
                                             <label style="font-size:13px;font-weight:700;color:#555;display:block;margin-bottom:4px"><i class="fas fa-image" style="color:#F59E0B;margin-left:4px"></i> سكرين تحويل المتبقي</label>
                                             <label style="cursor:pointer;display:block;border:2px dashed #F59E0B80;border-radius:12px;padding:12px;text-align:center;background:#FFFBEB">
                                                 <i class="fas fa-cloud-arrow-up" style="color:#F59E0B;font-size:18px;display:block;margin-bottom:4px"></i>
@@ -5613,7 +6052,7 @@
                 if (remaining <= 0) { Swal.fire('تنبيه', 'لا يوجد مبلغ متبقي', 'info'); return; }
                 const todayStr = new Date().toISOString().slice(0, 10);
                 const initWallet = order.remainingWallet || 'cash';
-                const showScreenInit = (initWallet === 'instapay' || initWallet === 'wallet') ? '' : 'none';
+                const showScreenInit = WalletMgr.needsTransferScreenshot(initWallet) ? '' : 'none';
                 const { value: formData } = await Swal.fire({
                     title: '<i class="fas fa-hand-holding-dollar text-green-500"></i> تحصيل المتبقي',
                     html: `<div style="text-align:right;direction:rtl">
@@ -5623,7 +6062,7 @@
                             <p style="font-size:12px;color:#999;margin-top:4px">${order.clientName || ''} #${order.id}</p>
                         </div>
                         <label style="font-size:13px;font-weight:700;color:#555;display:block;margin-bottom:4px">المحفظة</label>
-                        <select id="swalCollWallet" onchange="document.getElementById('swalCollScreenRow').style.display=(this.value==='instapay'||this.value==='wallet')?'':'none'" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:12px">
+                        <select id="swalCollWallet" onchange="document.getElementById('swalCollScreenRow').style.display=(WalletMgr.needsTransferScreenshot(this.value))?'':'none'" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:12px">
                             ${WalletMgr.buildOptionsHTML(initWallet)}
                         </select>
                         <label style="font-size:13px;font-weight:700;color:#555;display:block;margin-bottom:4px">تاريخ التحصيل</label>
@@ -5866,7 +6305,7 @@
                 
                 // Show/hide transfer screenshot row based on payment method
                 const tsRow = document.getElementById('transferScreenshotRow');
-                if (tsRow) tsRow.style.display = (o.paymentMethod === 'instapay' || o.paymentMethod === 'wallet') ? '' : 'none';
+                if (tsRow) tsRow.style.display = (typeof WalletMgr !== 'undefined' && WalletMgr.needsTransferScreenshot(o.paymentMethod)) ? '' : 'none';
                 // Load existing screenshot if any
                 ImageHelper.clearUpload('transferScreenshot', 'transferPreview');
                 if (o.transferScreenshot) {
@@ -5926,25 +6365,32 @@
             async handleNewOrder(e) {
                 e.preventDefault();
                 const f = e.target;
+                const submitBtn = f.querySelector('button[type="submit"]');
                 const isEditing = !!this._editingOrderId;
                 const editId = this._editingOrderId;
+                if (submitBtn) { submitBtn.disabled = true; submitBtn.style.opacity = '0.7'; }
+                Swal.fire({ title: isEditing ? 'جاري الحفظ...' : 'جاري إضافة الطلب...', allowOutsideClick: false, showConfirmButton: false, didOpen: () => Swal.showLoading() });
                 
                 // Validate: if phone belongs to existing client, name must match
                 const enteredPhone = f.phone.value.trim();
                 const enteredName = f.clientName.value.trim();
                 const existingClient = (AppState.orders || []).find(o => o.phone === enteredPhone && o.clientName && (!isEditing || o.id != editId));
                 if (existingClient && existingClient.clientName !== enteredName) {
+                    Swal.close();
+                    if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = '1'; }
                     Swal.fire('تنبيه', `رقم الهاتف <strong>${enteredPhone}</strong> مسجل باسم العميل <strong>${existingClient.clientName}</strong>. لا يمكن إدخال اسم مختلف لنفس الرقم.`, 'warning');
                     return;
                 }
                 
                 const products = (typeof OrderProducts !== 'undefined') ? OrderProducts.getProducts() : [];
                 if (!products || products.length === 0) {
+                    Swal.close();
+                    if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = '1'; }
                     Swal.fire('تنبيه', 'يرجى إضافة منتج واحد على الأقل', 'warning');
                     return;
                 }
                 
-                const totalPrice = products.reduce((s, p) => s + (p.price || 0), 0);
+                const totalPrice = products.reduce((s, p) => s + OrderSanitizer.productPrice(p), 0);
                 const totalProductionCost = products.reduce((s, p) => s + (p.productionCost || 0), 0);
                 
                 const deposit = parseFloat(f.deposit.value) || 0;
@@ -5971,10 +6417,10 @@
                             clientName: enteredName,
                             phone: enteredPhone,
                             details: f.details.value.trim(),
-                            price: totalPrice + shippingCost, // Add shipping to total
+                            price: totalPrice + shippingCost,
                             deposit: deposit,
                             paymentMethod: f.paymentMethod.value,
-                            products: products,
+                            products: products.map(p => OrderSanitizer.cleanProduct(p, true)),
                             productionCost: totalProductionCost,
                             isShipping: isShipping,
                             shippingCarrierId: shippingCarrierId || null,
@@ -5990,10 +6436,11 @@
                         // Remove undefined keys
                         Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k]);
                         
-                        await Branch.getCollection('orders').doc(editId.toString()).update(payload);
-                        if (Branch.isDefault()) db.collection('orders').doc(editId.toString()).update(payload).catch(() => {});
+                        const cleanPayload = OrderSanitizer.cleanOrder({ ...payload, products: payload.products.map(p => OrderSanitizer.cleanProduct(p, true)) }, true);
+                        await Branch.getCollection('orders').doc(editId.toString()).update(cleanPayload);
+                        if (Branch.isDefault()) db.collection('orders').doc(editId.toString()).update(cleanPayload).catch(() => {});
                         const idx = DataSvc._cache.findIndex(x => x.id == editId);
-                        if (idx !== -1) Object.assign(DataSvc._cache[idx], payload);
+                        if (idx !== -1) Object.assign(DataSvc._cache[idx], cleanPayload);
                         AppState.orders = DataSvc.getOrders();
                         Session.cacheOrders(DataSvc._cache);
                         
@@ -6002,11 +6449,11 @@
                         if (typeof OrderProducts !== 'undefined') OrderProducts.clear();
                         this._resetModalToAddMode();
                         Swal.fire({ icon: 'success', title: 'تم التعديل', text: 'تم تعديل الطلب بنجاح', timer: 1500, showConfirmButton: false });
-                        this.render();
-                        if (AppState.currentSection === 'dashboard') DashboardModule.render();
-                        if (AppState.currentSection === 'myorders') MyOrdersModule.render();
+                        requestAnimationFrame(() => { this.render(); if (AppState.currentSection === 'dashboard') DashboardModule.render(); if (AppState.currentSection === 'myorders') MyOrdersModule.render(); });
                     } catch (err) {
                         Swal.fire('خطأ', 'فشل تعديل الطلب: ' + err.message, 'error');
+                    } finally {
+                        if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = '1'; }
                     }
                 } else {
                     // ---- CREATE new order ----
@@ -6022,7 +6469,7 @@
                         paymentMethod: f.paymentMethod.value,
                         remainingWallet: null,
                         status: 'pending',
-                        products: products,
+                        products: products.map(p => OrderSanitizer.cleanProduct(p, true)),
                         productionCost: totalProductionCost,
                         isShipping: isShipping,
                         shippingCarrierId: shippingCarrierId || null,
@@ -6040,10 +6487,11 @@
                         closeModal('newOrderModal');
                         if (typeof OrderProducts !== 'undefined') OrderProducts.clear();
                         Swal.fire({ icon: 'success', title: 'تمت الإضافة', text: 'تم إضافة الطلب بنجاح', timer: 1500, showConfirmButton: false });
-                        this.render();
-                        if (AppState.currentSection === 'dashboard') DashboardModule.render();
+                        requestAnimationFrame(() => { this.render(); if (AppState.currentSection === 'dashboard') DashboardModule.render(); });
                     } catch (e) {
                         Swal.fire('خطأ', 'فشل إضافة الطلب: ' + e.message, 'error');
+                    } finally {
+                        if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = '1'; }
                     }
                 }
             },
@@ -6161,10 +6609,11 @@
         // Wallet Module
         // ==========================================
         const WalletModule = {
-            _walletMeta: {
+            _walletMeta: (typeof WalletMgr !== 'undefined' && WalletMgr.getBuiltInMeta) ? WalletMgr.getBuiltInMeta() : {
                 cash:     { name: 'نقدي',     icon: 'fas fa-money-bill-wave', color: 'emerald', gradient: 'from-emerald-500 to-emerald-600' },
                 instapay: { name: 'إنستاباي', icon: 'fas fa-bolt',            color: 'violet',  gradient: 'from-violet-500 to-violet-600' },
-                wallet:   { name: 'محفظة',    icon: 'fas fa-wallet',          color: 'blue',    gradient: 'from-blue-500 to-blue-600' }
+                wallet:   { name: 'محفظة',    icon: 'fas fa-wallet',          color: 'blue',    gradient: 'from-blue-500 to-blue-600' },
+                posta_visa: { name: 'فيزا البريد', icon: 'fas fa-credit-card', color: 'rose', gradient: 'from-rose-500 to-pink-600' }
             },
             _expenses: [],
             _expensesLoaded: false,
@@ -6347,22 +6796,43 @@
                 return this._walletMeta[key] || { name: this._getWalletName(key), icon: 'fas fa-piggy-bank', color: 'amber', gradient: 'from-amber-500 to-amber-600' };
             },
 
-            _buildWalletData(excludeReceived = true) {
+            _getWalletLuxStyle(key) {
+                const map = {
+                    cash:       { grad: 'linear-gradient(155deg, #065f46 0%, #059669 55%, #34d399 100%)', glow: 'rgba(16,185,129,0.5)' },
+                    instapay:   { grad: 'linear-gradient(155deg, #5b21b6 0%, #7c3aed 55%, #a78bfa 100%)', glow: 'rgba(139,92,246,0.5)' },
+                    wallet:     { grad: 'linear-gradient(155deg, #1e40af 0%, #3b82f6 55%, #60a5fa 100%)', glow: 'rgba(59,130,246,0.5)' },
+                    posta_visa: { grad: 'linear-gradient(155deg, #9f1239 0%, #e11d48 55%, #fb7185 100%)', glow: 'rgba(244,63,94,0.5)' }
+                };
+                return map[key] || { grad: 'linear-gradient(155deg, #92742e 0%, #C9A961 55%, #e8d5a3 100%)', glow: 'rgba(201,169,97,0.5)' };
+            },
+
+            _getPeriodLabel() {
+                const df = this.dateFilter;
+                const todayStr = new Date().toISOString().split('T')[0];
+                if (df === 'today') return 'اليوم — ' + new Date().toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long' });
+                if (df === 'week') return 'آخر 7 أيام';
+                if (df === 'month') return 'هذا الشهر — ' + new Date().toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' });
+                if (df === 'all') return 'كل الفترات';
+                if (df === 'single' && this.singleDate) return new Date(this.singleDate).toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+                if (df === 'custom' && this.customFrom && this.customTo) {
+                    const f = new Date(this.customFrom).toLocaleDateString('ar-EG', { day: 'numeric', month: 'short' });
+                    const t = new Date(this.customTo).toLocaleDateString('ar-EG', { day: 'numeric', month: 'short', year: 'numeric' });
+                    return `من ${f} إلى ${t}`;
+                }
+                return new Date().toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long' });
+            },
+
+            _buildWalletData() {
                 const allOrders = AppState.orders || [];
                 const allExpenses = this._expenses || [];
                 const expenses = allExpenses.filter(e => this._inDateRange(e.date));
                 const wallets = {};
-
-                // Get dates that already have shift handovers (to exclude from wallet totals)
-                const receivedDates = excludeReceived ? new Set(this._shiftRecords.map(r => r.date).filter(Boolean)) : new Set();
 
                 // Deposits: filter by order createdAt (exclude cancelled)
                 allOrders.filter(o => mapStatus(o.status) !== 'cancelled' && this._inDateRange(o.createdAt)).forEach(o => {
                     const deposit = o.deposit || 0;
                     const depWallet = o.paymentMethod || 'cash';
                     if (deposit > 0) {
-                        const orderDay = o.createdAt ? o.createdAt.split('T')[0] : '';
-                        if (receivedDates.has(orderDay)) return;
                         if (!wallets[depWallet]) wallets[depWallet] = { total: 0, transactions: [] };
                         wallets[depWallet].total += deposit;
                         wallets[depWallet].transactions.push({
@@ -6383,8 +6853,6 @@
                     if (!isCollected) return;
                     const collDate = o.collectedAt || o.deliveredAt || o.createdAt;
                     if (!this._inDateRange(collDate)) return;
-                    const collDay = collDate ? collDate.split('T')[0] : '';
-                    if (receivedDates.has(collDay)) return;
                     const remWallet = o.remainingWallet || 'cash';
                     if (!wallets[remWallet]) wallets[remWallet] = { total: 0, transactions: [] };
                     wallets[remWallet].total += remaining;
@@ -6396,8 +6864,6 @@
 
                 // Add expenses as negative transactions
                 expenses.forEach(exp => {
-                    const expDay = exp.date ? exp.date.split('T')[0] : '';
-                    if (receivedDates.has(expDay)) return;
                     const wKey = exp.wallet || 'cash';
                     if (!wallets[wKey]) wallets[wKey] = { total: 0, transactions: [], expenses: 0 };
                     if (!wallets[wKey].expenses) wallets[wKey].expenses = 0;
@@ -6410,7 +6876,7 @@
                 });
 
                 // Ensure the 3 main wallets always appear
-                ['cash', 'instapay', 'wallet'].forEach(k => {
+                (typeof WalletMgr !== 'undefined' ? WalletMgr.mainWalletKeys() : ['cash', 'instapay', 'wallet', 'posta_visa']).forEach(k => {
                     if (!wallets[k]) wallets[k] = { total: 0, transactions: [], expenses: 0 };
                     if (!wallets[k].expenses) wallets[k].expenses = 0;
                 });
@@ -6418,11 +6884,21 @@
                 return wallets;
             },
 
+            _syncWalletMeta() {
+                if (typeof WalletMgr !== 'undefined') {
+                    this._walletMeta = { ...WalletMgr.getBuiltInMeta() };
+                    WalletMgr.getCustomWallets().forEach(w => {
+                        this._walletMeta['custom_' + w.id] = { name: w.name, icon: 'fas fa-piggy-bank', color: 'amber', gradient: 'from-amber-500 to-amber-600' };
+                    });
+                }
+            },
+
             async render() {
                 const container = document.getElementById('walletContent');
                 if (!container) return;
+                if (typeof WalletMgr !== 'undefined') await WalletMgr.init();
+                this._syncWalletMeta();
                 await this._loadExpenses();
-                await this._loadShifts();
                 const wallets = this._buildWalletData();
                 const orders = AppState.orders || [];
                 const totalCollected = Object.values(wallets).reduce((s, w) => s + w.total, 0);
@@ -6437,64 +6913,45 @@
                 }, 0);
 
                 // Sort: main 3 first, then custom
-                const mainKeys = ['cash', 'instapay', 'wallet'];
+                const mainKeys = (typeof WalletMgr !== 'undefined' ? WalletMgr.mainWalletKeys() : ['cash', 'instapay', 'wallet', 'posta_visa']);
                 const customKeys = Object.keys(wallets).filter(k => !mainKeys.includes(k));
                 const allKeys = [...mainKeys, ...customKeys];
 
                 const df = this.dateFilter;
                 const todayStr = new Date().toISOString().split('T')[0];
                 container.innerHTML = `
-                    <!-- Date Filter -->
-                    <div class="bg-white rounded-2xl p-4 border border-gray-100 mb-4">
-                        <div class="flex flex-wrap items-center gap-2 mb-2">
+                <div class="wallet-dash">
+
+                    <!-- Filters -->
+                    <div class="bg-white rounded-2xl p-4 border border-gray-100 mb-4 shadow-sm">
+                        <div class="flex flex-wrap items-center gap-2 mb-3">
                             <i class="fas fa-filter text-accent text-sm"></i>
-                            <button onclick="WalletModule.setDateFilter('today')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition ${df==='today'?'bg-accent text-white':'bg-gray-100 text-gray-600 hover:bg-gray-200'}"><i class="fas fa-calendar-day ml-1"></i>اليوم</button>
-                            <button onclick="WalletModule.setDateFilter('week')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition ${df==='week'?'bg-accent text-white':'bg-gray-100 text-gray-600 hover:bg-gray-200'}">آخر أسبوع</button>
-                            <button onclick="WalletModule.setDateFilter('month')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition ${df==='month'?'bg-accent text-white':'bg-gray-100 text-gray-600 hover:bg-gray-200'}">هذا الشهر</button>
-                            <button onclick="WalletModule.setDateFilter('all')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition ${df==='all'?'bg-accent text-white':'bg-gray-100 text-gray-600 hover:bg-gray-200'}">الكل</button>
+                            <button onclick="WalletModule.setDateFilter('today')" class="wallet-dash-pill ${df==='today'?'active':''}"><i class="fas fa-calendar-day" style="margin-left:5px;font-size:10px"></i>اليوم</button>
+                            <button onclick="WalletModule.setDateFilter('week')" class="wallet-dash-pill ${df==='week'?'active':''}">آخر أسبوع</button>
+                            <button onclick="WalletModule.setDateFilter('month')" class="wallet-dash-pill ${df==='month'?'active':''}">هذا الشهر</button>
+                            <button onclick="WalletModule.setDateFilter('all')" class="wallet-dash-pill ${df==='all'?'active':''}">الكل</button>
                         </div>
-                        <div class="flex flex-wrap items-center gap-2">
-                            <div class="flex items-center gap-1">
-                                <span class="text-gray-400 text-xs">يوم:</span>
-                                <input type="date" id="walletSingleDate" value="${this.singleDate||todayStr}" max="${todayStr}" class="px-2 py-1.5 rounded-lg border border-gray-200 text-xs bg-gray-50 focus:border-accent outline-none" style="max-width:130px">
-                                <button onclick="WalletModule.applySingleDate()" class="px-3 py-1.5 rounded-lg text-xs font-bold transition ${df==='single'?'bg-accent text-white':'bg-gray-100 text-gray-600 hover:bg-gray-200'}"><i class="fas fa-search ml-1"></i>عرض</button>
-                            </div>
-                            <div class="flex items-center gap-1">
-                                <span class="text-gray-400 text-xs">من:</span>
-                                <input type="date" id="walletDateFrom" value="${this.customFrom||''}" max="${todayStr}" class="px-2 py-1.5 rounded-lg border border-gray-200 text-xs bg-gray-50 focus:border-accent outline-none" style="max-width:130px">
-                                <span class="text-gray-400 text-xs">إلى:</span>
-                                <input type="date" id="walletDateTo" value="${this.customTo||''}" max="${todayStr}" class="px-2 py-1.5 rounded-lg border border-gray-200 text-xs bg-gray-50 focus:border-accent outline-none" style="max-width:130px">
-                                <button onclick="WalletModule.applyCustomRange()" class="px-3 py-1.5 rounded-lg text-xs font-bold transition ${df==='custom'?'bg-accent text-white':'bg-gray-100 text-gray-600 hover:bg-gray-200'}"><i class="fas fa-check ml-1"></i>تطبيق</button>
-                            </div>
+                        <div class="flex flex-wrap items-center gap-2 text-xs">
+                            <span class="text-gray-400 font-bold">يوم:</span>
+                            <input type="date" id="walletSingleDate" value="${this.singleDate||todayStr}" max="${todayStr}" class="wallet-dash-date-input">
+                            <button onclick="WalletModule.applySingleDate()" class="wallet-dash-pill ${df==='single'?'active':''}" style="padding:7px 12px"><i class="fas fa-search" style="margin-left:4px;font-size:10px"></i>عرض</button>
+                            <span class="text-gray-300 mx-1">|</span>
+                            <span class="text-gray-400 font-bold">من:</span>
+                            <input type="date" id="walletDateFrom" value="${this.customFrom||''}" max="${todayStr}" class="wallet-dash-date-input">
+                            <span class="text-gray-400 font-bold">إلى:</span>
+                            <input type="date" id="walletDateTo" value="${this.customTo||''}" max="${todayStr}" class="wallet-dash-date-input">
+                            <button onclick="WalletModule.applyCustomRange()" class="wallet-dash-pill ${df==='custom'?'active':''}" style="padding:7px 12px"><i class="fas fa-check" style="margin-left:4px;font-size:10px"></i>تطبيق</button>
                         </div>
                     </div>
 
-                    <!-- Unreceived Shifts Alert -->
-                    ${(() => {
-                        if (AppState.currentUser?.role !== 'admin') return '';
-                        const _unrec = this._getUnreceivedDays();
-                        if (_unrec.length === 0) return '';
-                        return `<div onclick="WalletModule.showUnreceivedShifts()" class="cursor-pointer bg-gradient-to-l from-red-500 to-red-600 rounded-2xl p-4 text-white mb-4 flex items-center gap-4 hover:shadow-lg hover:shadow-red-500/20 transition group">
-                            <div class="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center shrink-0 animate-pulse">
-                                <i class="fas fa-exclamation-triangle text-xl"></i>
-                            </div>
-                            <div class="flex-1">
-                                <p class="font-black text-base">فيه ${_unrec.length} وردية غير مستلمة!</p>
-                                <p class="text-white/70 text-xs mt-0.5">اضغط هنا لاستلامهم واحدة واحدة</p>
-                            </div>
-                            <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shrink-0 font-black text-lg">${_unrec.length}</div>
-                            <i class="fas fa-chevron-left text-white/40 group-hover:text-white/80 transition"></i>
-                        </div>`;
-                    })()}
-
-                    <!-- Summary Stats -->
+                    <!-- Summary -->
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-5">
-                        <div class="stat-card cursor-pointer hover:shadow-md transition" onclick="WalletModule.showCollectedDetail()">
+                        <div class="stat-card cursor-pointer" onclick="WalletModule.showCollectedDetail()">
                             <div class="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center mb-2"><i class="fas fa-arrow-down text-green-500"></i></div>
                             <p class="text-xl font-black text-gray-900">${formatCurrency(totalCollected)}</p>
                             <p class="text-[11px] text-gray-400 font-semibold">إجمالي المحصّل <i class="fas fa-chevron-left text-[8px] text-accent"></i></p>
                         </div>
-                        <div class="stat-card cursor-pointer hover:shadow-md transition" onclick="WalletModule.showRemainingOrders()">
+                        <div class="stat-card cursor-pointer" onclick="WalletModule.showRemainingOrders()">
                             <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center mb-2"><i class="fas fa-clock text-red-400"></i></div>
                             <p class="text-xl font-black text-gray-900">${formatCurrency(totalRemaining)}</p>
                             <p class="text-[11px] text-gray-400 font-semibold">متبقي (لم يُسلّم) <i class="fas fa-chevron-left text-[8px] text-red-400"></i></p>
@@ -6506,56 +6963,45 @@
                         </div>
                     </div>
 
-                    <!-- Add Expense + Download Report + Shift Handover -->
-                    <div class="mb-4 flex flex-wrap gap-2">
+                    <!-- Actions -->
+                    <div class="mb-5 flex flex-wrap gap-2">
                         <button onclick="WalletModule.addExpense()" class="bg-red-500 hover:bg-red-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition shadow-lg shadow-red-500/20">
                             <i class="fas fa-receipt ml-2"></i> إضافة مصروف
                         </button>
                         <button onclick="WalletModule.downloadReport()" class="bg-primary hover:bg-primary/80 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition shadow-lg shadow-primary/20">
                             <i class="fas fa-download ml-2"></i> تحميل تقرير المحفظة
                         </button>
-                        ${AppState.currentUser?.role === 'admin' ? (() => {
-                            const _uCount = this._getUnreceivedDays().length;
-                            return `
-                        <button onclick="WalletModule.startShiftHandover()" class="bg-gradient-to-l from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition shadow-lg shadow-orange-500/20">
-                            <i class="fas fa-hand-holding-dollar ml-2"></i> استلمت الوردية
-                        </button>
-                        <button onclick="WalletModule.showUnreceivedShifts()" class="relative bg-red-500 hover:bg-red-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition shadow-lg shadow-red-500/20">
-                            <i class="fas fa-calendar-times ml-2"></i> ورديات غير مستلمة
-                            ${_uCount > 0 ? `<span class="absolute -top-2 -left-2 w-6 h-6 bg-yellow-400 text-gray-900 rounded-full text-xs font-black flex items-center justify-center shadow-lg animate-bounce">${_uCount}</span>` : ''}
-                        </button>
-                        <button onclick="WalletModule.showShiftHistory()" class="bg-gray-600 hover:bg-gray-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition shadow-lg shadow-gray-500/20">
-                            <i class="fas fa-history ml-2"></i> سجل الورديات
-                        </button>`;
-                        })() : ''}
                     </div>
 
-                    <!-- Wallet Cards -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <!-- Luxury Wallet Cards -->
+                    <div class="wallet-lux-grid">
                         ${allKeys.map(key => {
                             const meta = this._getWalletMeta(key);
+                            const lux = this._getWalletLuxStyle(key);
                             const w = wallets[key];
                             const txCount = w.transactions.length;
                             return `
-                            <div onclick="WalletModule.showDetail('${key}')" class="cursor-pointer group bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300">
-                                <div class="bg-gradient-to-l ${meta.gradient} p-4 text-white">
-                                    <div class="flex items-center justify-between mb-3">
-                                        <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-                                            <i class="${meta.icon} text-lg"></i>
-                                        </div>
-                                        <i class="fas fa-chevron-left text-white/50 group-hover:text-white/90 transition text-sm"></i>
-                                    </div>
-                                    <p class="text-2xl font-black">${formatCurrency(w.total)}</p>
-                                    <p class="text-sm text-white/70 mt-1">${meta.name}</p>
+                        <div onclick="WalletModule.showDetail('${key}')" class="wallet-lux-card" style="background:${lux.grad};--wallet-glow:${lux.glow}">
+                            <div class="wallet-lux-glow-spot"></div>
+                            <div class="wallet-lux-shine"></div>
+                            <div class="wallet-lux-edge"></div>
+                            <div class="wallet-lux-body">
+                                <div class="wallet-lux-top">
+                                    <div class="wallet-lux-icon"><i class="${meta.icon}"></i></div>
+                                    <div class="wallet-lux-arrow-wrap"><i class="fas fa-chevron-left wallet-lux-arrow"></i></div>
                                 </div>
-                                <div class="p-3 flex items-center justify-between text-xs text-gray-400">
-                                    <span><i class="fas fa-receipt ml-1"></i> ${txCount} عملية</span>
-                                    <span class="text-${meta.color}-500 font-bold">عرض التفاصيل</span>
-                                </div>
-                            </div>`;
+                                <p class="wallet-lux-balance">${formatCurrency(w.total)}</p>
+                                <p class="wallet-lux-name">${meta.name}</p>
+                            </div>
+                            <div class="wallet-lux-foot">
+                                <span><i class="fas fa-receipt" style="margin-left:5px;font-size:10px"></i>${txCount} عملية</span>
+                                <span class="lux-link">التفاصيل <i class="fas fa-arrow-left" style="font-size:8px;margin-right:3px"></i></span>
+                            </div>
+                        </div>`;
                         }).join('')}
                     </div>
-                `;
+
+                </div>`;
             },
 
             async showDetail(walletKey) {
@@ -6572,54 +7018,55 @@
                 const depositsTotal = txs.filter(t => t.type === 'deposit').reduce((s, t) => s + t.amount, 0);
                 const remainingTotal = txs.filter(t => t.type === 'remaining').reduce((s, t) => s + t.amount, 0);
                 const expensesTotal = w.expenses || 0;
+                const lux = this._getWalletLuxStyle(walletKey);
 
                 container.innerHTML = `
-                    <!-- Back + Header -->
-                    <div class="bg-gradient-to-l ${meta.gradient} rounded-2xl p-5 text-white mb-4">
-                        <div class="flex items-center justify-between mb-4">
-                            <button onclick="WalletModule.render()" class="bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg text-sm transition"><i class="fas fa-arrow-right ml-1"></i> رجوع</button>
-                            <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center"><i class="${meta.icon} text-lg"></i></div>
-                        </div>
-                        <h2 class="text-2xl font-black">${meta.name}</h2>
-                        <p class="text-3xl font-black mt-2">${formatCurrency(w.total)}</p>
-                        <div class="flex gap-4 mt-3 text-sm text-white/70 flex-wrap">
-                            <span><i class="fas fa-arrow-down ml-1"></i> عربون: ${formatCurrency(depositsTotal)}</span>
-                            <span><i class="fas fa-check-double ml-1"></i> متبقي: ${formatCurrency(remainingTotal)}</span>
-                            ${expensesTotal > 0 ? `<span class="text-red-200"><i class="fas fa-receipt ml-1"></i> مصاريف: ${formatCurrency(expensesTotal)}</span>` : ''}
+                    <div class="wallet-lux-header mb-4" style="background:${lux.grad};--wallet-glow:${lux.glow}">
+                        <div class="wallet-lux-glow-spot"></div>
+                        <div class="wallet-lux-edge"></div>
+                        <div style="position:relative;z-index:2">
+                            <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                                <button onclick="WalletModule.render()" class="px-3 py-1.5 rounded-lg text-sm font-bold transition" style="background:rgba(255,255,255,0.18);color:#fff;border:1px solid rgba(255,255,255,0.2)"><i class="fas fa-arrow-right ml-1"></i> رجوع</button>
+                                <div class="wallet-lux-icon" style="width:40px;height:40px;font-size:16px"><i class="${meta.icon}"></i></div>
+                            </div>
+                            <h2 class="text-xl font-black text-white">${meta.name}</h2>
+                            <p class="text-2xl font-black mt-2 text-white">${formatCurrency(w.total)}</p>
+                            <div class="flex gap-4 mt-3 text-sm flex-wrap" style="color:rgba(255,255,255,0.8)">
+                                <span><i class="fas fa-arrow-down ml-1"></i> عربون: ${formatCurrency(depositsTotal)}</span>
+                                <span><i class="fas fa-check-double ml-1"></i> متبقي: ${formatCurrency(remainingTotal)}</span>
+                                ${expensesTotal > 0 ? `<span style="color:#fecaca"><i class="fas fa-receipt ml-1"></i> مصاريف: ${formatCurrency(expensesTotal)}</span>` : ''}
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Add Expense to this wallet -->
                     <div class="mb-4">
                         <button onclick="WalletModule.addExpense('${walletKey}')" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-lg shadow-red-500/20">
                             <i class="fas fa-receipt ml-1"></i> إضافة مصروف لهذه المحفظة
                         </button>
                     </div>
 
-                    <!-- Mini Stats -->
                     <div class="grid grid-cols-4 gap-3 mb-4">
-                        <div class="bg-white rounded-xl p-3 border border-gray-100 text-center">
-                            <p class="text-lg font-black text-${meta.color}-600">${txs.length}</p>
+                        <div class="bg-white rounded-xl p-3 border border-gray-100 text-center shadow-sm">
+                            <p class="text-lg font-black text-gray-800">${txs.length}</p>
                             <p class="text-[10px] text-gray-400">إجمالي العمليات</p>
                         </div>
-                        <div class="bg-white rounded-xl p-3 border border-gray-100 text-center">
+                        <div class="bg-white rounded-xl p-3 border border-gray-100 text-center shadow-sm">
                             <p class="text-lg font-black text-green-600">${txs.filter(t=>t.type==='deposit').length}</p>
                             <p class="text-[10px] text-gray-400">عربون</p>
                         </div>
-                        <div class="bg-white rounded-xl p-3 border border-gray-100 text-center">
+                        <div class="bg-white rounded-xl p-3 border border-gray-100 text-center shadow-sm">
                             <p class="text-lg font-black text-accent">${txs.filter(t=>t.type==='remaining').length}</p>
                             <p class="text-[10px] text-gray-400">متبقي محصّل</p>
                         </div>
-                        <div class="bg-white rounded-xl p-3 border border-gray-100 text-center">
+                        <div class="bg-white rounded-xl p-3 border border-gray-100 text-center shadow-sm">
                             <p class="text-lg font-black text-red-500">${txs.filter(t=>t.type==='expense').length}</p>
                             <p class="text-[10px] text-gray-400">مصاريف</p>
                         </div>
                     </div>
 
-                    <!-- Transactions List -->
-                    <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-                        <div class="p-4 border-b border-gray-50">
-                            <h3 class="font-bold text-sm text-gray-800 flex items-center gap-2"><i class="fas fa-list text-${meta.color}-500"></i> سجل العمليات</h3>
+                    <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+                        <div class="p-4 border-b border-gray-50 bg-gray-50/50">
+                            <h3 class="font-bold text-sm text-gray-800 flex items-center gap-2"><i class="fas fa-list text-accent"></i> سجل العمليات</h3>
                         </div>
                         <div class="divide-y divide-gray-50 max-h-[500px] overflow-y-auto">
                             ${txs.length > 0 ? txs.map(tx => {
@@ -6664,8 +7111,8 @@
                 const rows = orders.filter(o => (o.deposit || 0) > 0 || (o.remainingWallet && ['delivered','customer_received','collected','fully_paid'].includes(o.status))).map(o => {
                     const deposit = o.deposit || 0;
                     const remaining = Math.max(0, (o.price || 0) - deposit);
-                    const depMethod = {cash:'نقدي',instapay:'إنستاباي',wallet:'محفظة'}[o.paymentMethod] || 'نقدي';
-                    const remMethod = o.remainingWallet ? ({cash:'نقدي',instapay:'إنستاباي',wallet:'محفظة'}[o.remainingWallet] || '') : '';
+                    const depMethod = (typeof WalletMgr !== 'undefined' ? WalletMgr.getLabel(o.paymentMethod || 'cash') : (o.paymentMethod || 'نقدي'));
+                    const remMethod = o.remainingWallet ? (typeof WalletMgr !== 'undefined' ? WalletMgr.getLabel(o.remainingWallet) : o.remainingWallet) : '';
                     const isCollected = remaining > 0 && o.remainingWallet && ['delivered','customer_received','collected','fully_paid'].includes(o.status);
                     const phone = o.phone || '';
                     return { id: o.id, client: o.clientName || 'بدون اسم', phone, deposit, remaining, depMethod, remMethod, isCollected, total: o.price || 0, date: o.createdAt };
@@ -6704,7 +7151,7 @@
 
             downloadReport() {
                 const wallets = this._buildWalletData();
-                const mainKeys = ['cash', 'instapay', 'wallet'];
+                const mainKeys = (typeof WalletMgr !== 'undefined' ? WalletMgr.mainWalletKeys() : ['cash', 'instapay', 'wallet', 'posta_visa']);
                 const customKeys = Object.keys(wallets).filter(k => !mainKeys.includes(k));
                 const allKeys = [...mainKeys, ...customKeys];
                 const totalCollected = Object.values(wallets).reduce((s, w) => s + w.total, 0);
@@ -6877,523 +7324,6 @@
                                 </div>`;
                             }).join('') : '<div class="p-8 text-center text-gray-300"><i class="fas fa-check-circle text-3xl mb-2 block text-green-300"></i><p class="text-sm">لا يوجد طلبات متبقي عليها مبالغ</p></div>'}
                         </div>
-                    </div>
-                `;
-            },
-
-            // ==========================================
-            // Shift Handover (استلمت الوردية)
-            // ==========================================
-            _shiftRecords: [],
-            _shiftLoaded: false,
-
-            async _loadShifts() {
-                if (this._shiftLoaded) return this._shiftRecords;
-                try {
-                    const snap = await Branch.getCollection('shift_handovers').orderBy('createdAt', 'desc').limit(100).get();
-                    this._shiftRecords = snap.empty ? [] : snap.docs.map(d => ({ ...d.data(), _docId: d.id }));
-                } catch(e) { console.error('Load shifts error:', e); this._shiftRecords = []; }
-                this._shiftLoaded = true;
-                return this._shiftRecords;
-            },
-
-            _getUnreceivedDays() {
-                const allOrders = AppState.orders || [];
-                if (allOrders.length === 0) return [];
-                const receivedDates = new Set(this._shiftRecords.map(r => r.date).filter(Boolean));
-                const todayStr = new Date().toISOString().split('T')[0];
-
-                // Find all unique days that have orders (created, collected, or delivered)
-                const orderDays = new Set();
-                allOrders.forEach(o => {
-                    if (mapStatus(o.status) === 'cancelled') return;
-                    const cd = o.createdAt ? o.createdAt.split('T')[0] : '';
-                    const col = o.collectedAt ? o.collectedAt.split('T')[0] : '';
-                    const del = o.deliveredAt ? o.deliveredAt.split('T')[0] : '';
-                    if (cd && cd !== todayStr) orderDays.add(cd);
-                    if (col && col !== todayStr) orderDays.add(col);
-                    if (del && del !== todayStr) orderDays.add(del);
-                });
-
-                // Filter: days with orders but no shift received (exclude today, today uses normal button)
-                const unreceived = [...orderDays].filter(d => !receivedDates.has(d)).sort((a, b) => b.localeCompare(a));
-
-                // Limit to last 30 days max
-                const thirtyDaysAgo = new Date();
-                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-                const cutoff = thirtyDaysAgo.toISOString().split('T')[0];
-                return unreceived.filter(d => d >= cutoff);
-            },
-
-            async showUnreceivedShifts() {
-                const container = document.getElementById('walletContent');
-                if (!container) return;
-                await this._loadShifts();
-                const unreceivedDays = this._getUnreceivedDays();
-                const allOrders = AppState.orders || [];
-
-                // Build summary per day
-                const daySummaries = unreceivedDays.map(dayStr => {
-                    const dayOrders = allOrders.filter(o => {
-                        if (mapStatus(o.status) === 'cancelled') return false;
-                        const cd = o.createdAt ? o.createdAt.split('T')[0] : '';
-                        const col = o.collectedAt ? o.collectedAt.split('T')[0] : '';
-                        const del = o.deliveredAt ? o.deliveredAt.split('T')[0] : '';
-                        return cd === dayStr || col === dayStr || del === dayStr;
-                    });
-                    const totalRevenue = dayOrders.reduce((s, o) => s + (o.deposit || 0), 0);
-                    const dateLabel = new Date(dayStr).toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric', weekday: 'short' });
-                    return { dayStr, dateLabel, ordersCount: dayOrders.length, totalRevenue };
-                });
-
-                container.innerHTML = `
-                    <div class="mb-4">
-                        <button onclick="WalletModule.render()" class="bg-primary hover:bg-primaryLight text-white px-4 py-2 rounded-xl text-sm font-bold transition"><i class="fas fa-arrow-right ml-1"></i> رجوع</button>
-                    </div>
-
-                    <!-- Alert Header -->
-                    <div class="bg-gradient-to-l from-red-500 to-red-600 rounded-2xl p-5 text-white mb-5">
-                        <div class="flex items-center gap-3 mb-2">
-                            <div class="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center"><i class="fas fa-exclamation-triangle text-2xl"></i></div>
-                            <div>
-                                <h2 class="text-xl font-black">ورديات غير مُستلمة</h2>
-                                <p class="text-white/70 text-sm">فيه ${unreceivedDays.length} يوم لسه مستلمتش ورديتهم</p>
-                            </div>
-                        </div>
-                        <p class="text-white/60 text-xs mt-2"><i class="fas fa-info-circle ml-1"></i> اضغط على أي يوم لاستلام ورديته</p>
-                    </div>
-
-                    <!-- Days List -->
-                    <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-                        <div class="p-4 border-b border-gray-100 bg-red-50/50">
-                            <h3 class="font-bold text-sm text-gray-800 flex items-center gap-2"><i class="fas fa-calendar-times text-red-500"></i> الأيام الغير مستلمة (آخر 30 يوم)</h3>
-                        </div>
-                        <div class="divide-y divide-gray-50 max-h-[500px] overflow-y-auto">
-                            ${daySummaries.length > 0 ? daySummaries.map(d => `
-                                <div class="p-4 hover:bg-amber-50/30 transition cursor-pointer flex items-center gap-4" onclick="WalletModule.startShiftHandover('${d.dayStr}')">
-                                    <div class="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
-                                        <i class="fas fa-calendar-xmark text-red-400 text-lg"></i>
-                                    </div>
-                                    <div class="flex-1">
-                                        <p class="font-bold text-sm text-gray-900">${d.dateLabel}</p>
-                                        <div class="flex gap-3 text-[11px] mt-1">
-                                            <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md font-bold"><i class="fas fa-receipt text-[9px] ml-1"></i> ${d.ordersCount} طلب</span>
-                                            <span class="bg-green-50 text-green-700 px-2 py-0.5 rounded-md font-bold"><i class="fas fa-coins text-[9px] ml-1"></i> عربون: ${formatCurrency(d.totalRevenue)}</span>
-                                        </div>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <span class="text-xs font-bold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg"><i class="fas fa-hand-holding-dollar ml-1"></i> استلم</span>
-                                        <i class="fas fa-chevron-left text-gray-300 text-xs"></i>
-                                    </div>
-                                </div>
-                            `).join('') : '<div class="p-8 text-center text-gray-300"><i class="fas fa-check-circle text-3xl mb-2 block text-green-300"></i><p class="text-sm font-bold">كل الورديات مستلمة 🎉</p></div>'}
-                        </div>
-                    </div>
-                `;
-            },
-
-            async startShiftHandover(targetDate) {
-                const container = document.getElementById('walletContent');
-                if (!container) return;
-                await this._loadExpenses();
-
-                // Determine which date to use
-                const targetDateStr = targetDate || new Date().toISOString().split('T')[0];
-                const isToday = targetDateStr === new Date().toISOString().split('T')[0];
-                
-                // Force specific date data
-                const savedFilter = this.dateFilter;
-                const savedSingle = this.singleDate;
-                const savedFrom = this.customFrom;
-                const savedTo = this.customTo;
-                this.dateFilter = 'single';
-                this.singleDate = targetDateStr;
-                this.customFrom = null;
-                this.customTo = null;
-
-                const wallets = this._buildWalletData(false);
-                const allOrders = AppState.orders || [];
-
-                // Get orders for this date
-                const dayOrders = allOrders.filter(o => {
-                    if (mapStatus(o.status) === 'cancelled') return false;
-                    const createdDate = o.createdAt ? o.createdAt.split('T')[0] : '';
-                    const collDate = o.collectedAt ? o.collectedAt.split('T')[0] : '';
-                    const delDate = o.deliveredAt ? o.deliveredAt.split('T')[0] : '';
-                    return createdDate === targetDateStr || collDate === targetDateStr || delDate === targetDateStr;
-                }).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-                // Restore filters
-                this.dateFilter = savedFilter;
-                this.singleDate = savedSingle;
-                this.customFrom = savedFrom;
-                this.customTo = savedTo;
-
-                const mainKeys = ['cash', 'instapay', 'wallet'];
-                const customKeys = Object.keys(wallets).filter(k => !mainKeys.includes(k));
-                const allKeys = [...mainKeys, ...customKeys];
-                const grandTotal = Object.values(wallets).reduce((s, w) => s + Math.max(0, w.total), 0);
-
-                const displayDate = new Date(targetDateStr).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
-                const nowTime = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
-
-                // Store the target date for confirmShiftHandover
-                this._pendingShiftDate = targetDateStr;
-
-                container.innerHTML = `
-                    <!-- Header -->
-                    <div class="bg-gradient-to-l ${isToday ? 'from-amber-500 to-orange-600' : 'from-red-500 to-red-600'} rounded-2xl p-6 text-white mb-5">
-                        <div class="flex items-center justify-between mb-4">
-                            <button onclick="${isToday ? 'WalletModule.render()' : 'WalletModule.showUnreceivedShifts()'}" class="bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg text-sm transition"><i class="fas fa-arrow-right ml-1"></i> رجوع</button>
-                            <div class="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center"><i class="fas fa-hand-holding-dollar text-2xl"></i></div>
-                        </div>
-                        <h2 class="text-2xl font-black mb-1">${isToday ? 'استلام وردية اليوم' : 'استلام وردية سابقة'}</h2>
-                        <p class="text-white/80 text-sm"><i class="fas fa-calendar ml-1"></i> ${displayDate}${isToday ? ' — ' + nowTime : ''}</p>
-                        ${!isToday ? '<p class="text-yellow-200 text-xs mt-1"><i class="fas fa-exclamation-triangle ml-1"></i> هذه وردية قديمة لم تُستلم</p>' : ''}
-                        <div class="mt-4 bg-white/15 rounded-xl p-4 flex items-center justify-between">
-                            <div>
-                                <p class="text-white/70 text-xs">إجمالي المحافظ</p>
-                                <p class="text-3xl font-black mt-1">${formatCurrency(grandTotal)}</p>
-                            </div>
-                            <div class="text-left">
-                                <p class="text-white/70 text-xs">عدد الطلبات</p>
-                                <p class="text-3xl font-black mt-1">${dayOrders.length}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Wallet Cards - Receivable -->
-                    <h3 class="font-bold text-gray-800 text-sm mb-3 flex items-center gap-2"><i class="fas fa-wallet text-amber-500"></i> المحافظ — حدد المبلغ المُستلم</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
-                        ${allKeys.map(key => {
-                            const meta = this._getWalletMeta(key);
-                            const w = wallets[key];
-                            const wTotal = Math.max(0, w.total);
-                            return `
-                            <div class="bg-white rounded-2xl border-2 border-gray-100 overflow-hidden shift-wallet-card" data-wallet="${key}">
-                                <div class="bg-gradient-to-l ${meta.gradient} p-4 text-white">
-                                    <div class="flex items-center gap-2 mb-2">
-                                        <div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center"><i class="${meta.icon}"></i></div>
-                                        <span class="font-bold">${meta.name}</span>
-                                    </div>
-                                    <p class="text-2xl font-black">${formatCurrency(wTotal)}</p>
-                                    <p class="text-white/60 text-xs mt-1">${w.transactions.filter(t=>t.type!=='expense').length} عملية تحصيل | ${(w.expenses||0) > 0 ? formatCurrency(w.expenses) + ' مصاريف' : 'بدون مصاريف'}</p>
-                                </div>
-                                <div class="p-4">
-                                    <label class="text-xs font-bold text-gray-500 block mb-1.5">المبلغ المُستلم فعلياً</label>
-                                    <div class="flex items-center gap-2">
-                                        <input type="number" step="0.01" min="0" value="${wTotal.toFixed(2)}" 
-                                            class="shift-received-input flex-1 px-3 py-2.5 rounded-xl border-2 border-gray-200 bg-gray-50 text-sm font-bold text-center focus:border-amber-400 outline-none transition"
-                                            data-wallet="${key}" data-expected="${wTotal.toFixed(2)}"
-                                            oninput="WalletModule._updateShiftDiff(this)">
-                                        <span class="text-xs text-gray-400">ج.م</span>
-                                    </div>
-                                    <div class="shift-diff-badge mt-2 text-center text-xs font-bold rounded-lg py-1 hidden"></div>
-                                </div>
-                            </div>`;
-                        }).join('')}
-                    </div>
-
-                    <!-- Day's Orders -->
-                    <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden mb-5">
-                        <div class="p-4 border-b border-gray-100 bg-amber-50/50 flex items-center justify-between">
-                            <h3 class="font-bold text-sm text-gray-800 flex items-center gap-2"><i class="fas fa-receipt text-amber-500"></i> طلبات ${isToday ? 'اليوم' : 'هذا اليوم'} (${dayOrders.length})</h3>
-                            <span class="text-xs text-gray-400">الإجمالي: <strong class="text-gray-700">${formatCurrency(dayOrders.reduce((s,o)=>s+(o.price||0),0))}</strong></span>
-                        </div>
-                        <div class="divide-y divide-gray-50 max-h-[300px] overflow-y-auto">
-                            ${dayOrders.length > 0 ? dayOrders.map(o => {
-                                const dep = o.deposit || 0;
-                                const rem = Math.max(0, (o.price||0) - dep);
-                                const depW = this._getWalletName(o.paymentMethod || 'cash');
-                                const remW = o.remainingWallet ? this._getWalletName(o.remainingWallet) : '';
-                                const isCollected = o.collected === true || (o.collected === undefined && ['delivered','ready_at_branch','ready'].includes(o.status));
-                                const st = statusLabel(o.status);
-                                return `
-                                <div class="p-3 hover:bg-gray-50/50 transition flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-lg ${mapStatus(o.status)==='delivered' ? 'bg-green-50' : mapStatus(o.status)==='cancelled' ? 'bg-red-50' : 'bg-blue-50'} flex items-center justify-center shrink-0">
-                                        <i class="fas ${mapStatus(o.status)==='delivered' ? 'fa-check text-green-500' : 'fa-box text-blue-500'} text-xs"></i>
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <div class="flex items-center gap-2">
-                                            <span class="text-sm font-bold text-gray-800 truncate">${o.clientName || 'بدون اسم'}</span>
-                                            <span class="text-[10px] font-mono text-gray-400">#${o.id}</span>
-                                            <span class="text-[9px] px-1.5 py-0.5 rounded ${mapStatus(o.status)==='delivered' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'} font-bold">${st}</span>
-                                        </div>
-                                        <div class="flex flex-wrap gap-2 mt-1 text-[11px]">
-                                            ${dep > 0 ? `<span class="bg-green-50 text-green-700 px-2 py-0.5 rounded-md font-bold"><i class="fas fa-arrow-down text-[8px] ml-0.5"></i> عربون ${formatCurrency(dep)} <span class="text-green-500">(${depW})</span></span>` : ''}
-                                            ${rem > 0 && isCollected ? `<span class="bg-accent/10 text-accent px-2 py-0.5 rounded-md font-bold"><i class="fas fa-check text-[8px] ml-0.5"></i> باقي ${formatCurrency(rem)} <span class="text-accent/70">(${remW})</span></span>` : ''}
-                                            ${rem > 0 && !isCollected ? `<span class="bg-red-50 text-red-500 px-2 py-0.5 rounded-md font-bold"><i class="fas fa-clock text-[8px] ml-0.5"></i> متبقي ${formatCurrency(rem)}</span>` : ''}
-                                        </div>
-                                    </div>
-                                    <div class="text-left shrink-0">
-                                        <p class="font-black text-sm text-gray-900">${formatCurrency(o.price||0)}</p>
-                                    </div>
-                                </div>`;
-                            }).join('') : '<div class="p-8 text-center text-gray-300"><i class="fas fa-inbox text-2xl mb-2 block"></i><p class="text-sm">لا يوجد طلبات في هذا اليوم</p></div>'}
-                        </div>
-                    </div>
-
-                    <!-- Notes -->
-                    <div class="bg-white rounded-2xl border border-gray-100 p-4 mb-5">
-                        <h3 class="font-bold text-sm text-gray-800 mb-3 flex items-center gap-2"><i class="fas fa-sticky-note text-amber-500"></i> ملاحظات / نواقص / تعليمات</h3>
-                        <textarea id="shiftNotes" rows="3" placeholder="اكتب أي ملاحظات، نواقص، عجز، تعليمات..." class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-sm focus:border-amber-400 outline-none resize-none transition"></textarea>
-                    </div>
-
-                    <!-- Confirm Button -->
-                    <button onclick="WalletModule.confirmShiftHandover()" class="w-full bg-gradient-to-l from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white py-4 rounded-2xl font-black text-lg transition shadow-lg shadow-orange-500/30 mb-4">
-                        <i class="fas fa-check-circle ml-2"></i> تأكيد استلام الوردية
-                    </button>
-                `;
-            },
-
-            _updateShiftDiff(input) {
-                const expected = parseFloat(input.dataset.expected) || 0;
-                const received = parseFloat(input.value) || 0;
-                const diff = received - expected;
-                const badge = input.closest('.shift-wallet-card')?.querySelector('.shift-diff-badge');
-                if (!badge) return;
-                if (Math.abs(diff) < 0.01) {
-                    badge.classList.add('hidden');
-                    input.style.borderColor = '#10b981';
-                } else if (diff > 0) {
-                    badge.classList.remove('hidden');
-                    badge.className = 'shift-diff-badge mt-2 text-center text-xs font-bold rounded-lg py-1 bg-green-50 text-green-600';
-                    badge.innerHTML = `<i class="fas fa-arrow-up ml-1"></i> زيادة ${formatCurrency(diff)}`;
-                    input.style.borderColor = '#10b981';
-                } else {
-                    badge.classList.remove('hidden');
-                    badge.className = 'shift-diff-badge mt-2 text-center text-xs font-bold rounded-lg py-1 bg-red-50 text-red-500';
-                    badge.innerHTML = `<i class="fas fa-arrow-down ml-1"></i> عجز ${formatCurrency(Math.abs(diff))}`;
-                    input.style.borderColor = '#ef4444';
-                }
-            },
-
-            async confirmShiftHandover() {
-                const inputs = document.querySelectorAll('.shift-received-input');
-                const walletData = {};
-                let totalExpected = 0, totalReceived = 0;
-                inputs.forEach(inp => {
-                    const key = inp.dataset.wallet;
-                    const expected = parseFloat(inp.dataset.expected) || 0;
-                    const received = parseFloat(inp.value) || 0;
-                    walletData[key] = { expected, received, diff: received - expected, walletName: this._getWalletName(key) };
-                    totalExpected += expected;
-                    totalReceived += received;
-                });
-                const totalDiff = totalReceived - totalExpected;
-                const notes = document.getElementById('shiftNotes')?.value?.trim() || '';
-
-                // Build summary for confirmation
-                let summaryRows = Object.entries(walletData).map(([key, d]) => {
-                    const diffClass = d.diff > 0.01 ? 'color:#10b981' : d.diff < -0.01 ? 'color:#ef4444' : 'color:#888';
-                    const diffText = Math.abs(d.diff) < 0.01 ? 'مطابق ✓' : d.diff > 0 ? `+${d.diff.toFixed(2)} زيادة` : `${d.diff.toFixed(2)} عجز`;
-                    return `<tr>
-                        <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;font-weight:bold">${d.walletName}</td>
-                        <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;text-align:center">${d.expected.toFixed(2)}</td>
-                        <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;text-align:center;font-weight:bold">${d.received.toFixed(2)}</td>
-                        <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;text-align:center;font-weight:bold;${diffClass}">${diffText}</td>
-                    </tr>`;
-                }).join('');
-
-                const totalDiffClass = totalDiff > 0.01 ? 'color:#10b981' : totalDiff < -0.01 ? 'color:#ef4444' : 'color:#C9A961';
-                const totalDiffText = Math.abs(totalDiff) < 0.01 ? 'مطابق ✓' : totalDiff > 0 ? `+${totalDiff.toFixed(2)} زيادة` : `${totalDiff.toFixed(2)} عجز`;
-
-                const { isConfirmed } = await Swal.fire({
-                    title: '<i class="fas fa-hand-holding-dollar" style="color:#f59e0b"></i> تأكيد استلام الوردية',
-                    html: `<div style="direction:rtl;text-align:right;max-height:400px;overflow-y:auto">
-                        <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px">
-                            <thead><tr style="background:#f8f9fa">
-                                <th style="padding:8px 12px;text-align:right;font-size:11px;color:#999">المحفظة</th>
-                                <th style="padding:8px 12px;text-align:center;font-size:11px;color:#999">المتوقع</th>
-                                <th style="padding:8px 12px;text-align:center;font-size:11px;color:#999">المُستلم</th>
-                                <th style="padding:8px 12px;text-align:center;font-size:11px;color:#999">الفرق</th>
-                            </tr></thead>
-                            <tbody>${summaryRows}</tbody>
-                            <tfoot><tr style="background:#fff8ed">
-                                <td style="padding:10px 12px;font-weight:900;color:#f59e0b">الإجمالي</td>
-                                <td style="padding:10px 12px;text-align:center;font-weight:bold">${totalExpected.toFixed(2)}</td>
-                                <td style="padding:10px 12px;text-align:center;font-weight:900">${totalReceived.toFixed(2)}</td>
-                                <td style="padding:10px 12px;text-align:center;font-weight:900;${totalDiffClass}">${totalDiffText}</td>
-                            </tr></tfoot>
-                        </table>
-                        ${notes ? `<div style="background:#f8f8f8;padding:10px;border-radius:8px;font-size:12px;color:#555"><strong style="color:#f59e0b"><i class="fas fa-sticky-note"></i> ملاحظات:</strong> ${notes}</div>` : ''}
-                    </div>`,
-                    showCancelButton: true,
-                    confirmButtonText: '<i class="fas fa-check ml-1"></i> تأكيد الاستلام',
-                    cancelButtonText: 'مراجعة',
-                    confirmButtonColor: '#f59e0b',
-                    width: 600
-                });
-                if (!isConfirmed) return;
-
-                // Save to Firestore
-                const shiftDate = this._pendingShiftDate || new Date().toISOString().split('T')[0];
-                const record = {
-                    id: Date.now().toString(),
-                    wallets: walletData,
-                    totalExpected,
-                    totalReceived,
-                    totalDiff,
-                    notes,
-                    ordersCount: (AppState.orders || []).filter(o => {
-                        if (mapStatus(o.status) === 'cancelled') return false;
-                        const cd = o.createdAt ? o.createdAt.split('T')[0] : '';
-                        const col = o.collectedAt ? o.collectedAt.split('T')[0] : '';
-                        const del = o.deliveredAt ? o.deliveredAt.split('T')[0] : '';
-                        return cd === shiftDate || col === shiftDate || del === shiftDate;
-                    }).length,
-                    receivedBy: AppState.currentUser?.username || 'admin',
-                    receivedByName: AppState.currentUser?.name || 'الأدمن',
-                    createdAt: new Date().toISOString(),
-                    date: shiftDate
-                };
-
-                try {
-                    await Branch.getCollection('shift_handovers').doc(record.id).set(record);
-                    this._shiftRecords.unshift(record);
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'تم استلام الوردية بنجاح!',
-                        html: `<div style="direction:rtl">
-                            <p style="font-size:14px;color:#555">تم تسجيل استلام <strong style="color:#f59e0b">${formatCurrency(totalReceived)}</strong></p>
-                            ${Math.abs(totalDiff) > 0.01 ? `<p style="font-size:13px;margin-top:8px;${totalDiffClass};font-weight:bold">${totalDiffText}</p>` : ''}
-                        </div>`,
-                        confirmButtonColor: '#f59e0b',
-                        timer: 3000
-                    });
-                    this.render();
-                } catch(e) {
-                    Swal.fire('خطأ', 'فشل حفظ سجل الوردية: ' + e.message, 'error');
-                }
-            },
-
-            async showShiftHistory() {
-                const container = document.getElementById('walletContent');
-                if (!container) return;
-                await this._loadShifts();
-                const records = this._shiftRecords;
-
-                container.innerHTML = `
-                    <div class="mb-4">
-                        <button onclick="WalletModule.render()" class="bg-primary hover:bg-primaryLight text-white px-4 py-2 rounded-xl text-sm font-bold transition"><i class="fas fa-arrow-right ml-1"></i> رجوع</button>
-                    </div>
-                    <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-                        <div class="p-4 border-b border-gray-100 bg-amber-50/50">
-                            <h3 class="font-bold text-sm text-gray-800 flex items-center gap-2"><i class="fas fa-history text-amber-500"></i> سجل استلام الورديات</h3>
-                        </div>
-                        <div class="divide-y divide-gray-50 max-h-[600px] overflow-y-auto">
-                            ${records.length > 0 ? records.map(r => {
-                                const diffClass = r.totalDiff > 0.01 ? 'text-green-600 bg-green-50' : r.totalDiff < -0.01 ? 'text-red-500 bg-red-50' : 'text-accent bg-accent/10';
-                                const diffText = Math.abs(r.totalDiff) < 0.01 ? 'مطابق ✓' : r.totalDiff > 0 ? `+${r.totalDiff.toFixed(2)} زيادة` : `${r.totalDiff.toFixed(2)} عجز`;
-                                const dateStr = r.createdAt ? new Date(r.createdAt).toLocaleDateString('ar-EG', { year:'numeric', month:'short', day:'numeric', weekday:'short' }) : '';
-                                const timeStr = r.createdAt ? new Date(r.createdAt).toLocaleTimeString('ar-EG', { hour:'2-digit', minute:'2-digit' }) : '';
-                                return `
-                                <div class="p-4 hover:bg-gray-50/50 transition cursor-pointer" onclick="WalletModule.showShiftDetail('${r.id}')">
-                                    <div class="flex items-center justify-between mb-2">
-                                        <div class="flex items-center gap-3">
-                                            <div class="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
-                                                <i class="fas fa-hand-holding-dollar text-amber-500"></i>
-                                            </div>
-                                            <div>
-                                                <p class="font-bold text-sm text-gray-900">${r.receivedByName || r.receivedBy || 'الأدمن'}</p>
-                                                <p class="text-[11px] text-gray-400">${dateStr} — ${timeStr}</p>
-                                            </div>
-                                        </div>
-                                        <div class="text-left">
-                                            <p class="font-black text-lg text-gray-900">${formatCurrency(r.totalReceived)}</p>
-                                            <span class="text-[10px] px-2 py-0.5 rounded-lg font-bold ${diffClass}">${diffText}</span>
-                                        </div>
-                                    </div>
-                                    <div class="flex flex-wrap gap-2 text-[11px]">
-                                        <span class="bg-gray-100 text-gray-600 px-2 py-1 rounded-lg"><i class="fas fa-receipt ml-1"></i> ${r.ordersCount || 0} طلب</span>
-                                        <span class="bg-amber-50 text-amber-700 px-2 py-1 rounded-lg"><i class="fas fa-wallet ml-1"></i> متوقع: ${formatCurrency(r.totalExpected)}</span>
-                                        ${r.notes ? `<span class="bg-blue-50 text-blue-600 px-2 py-1 rounded-lg"><i class="fas fa-sticky-note ml-1"></i> فيه ملاحظات</span>` : ''}
-                                    </div>
-                                </div>`;
-                            }).join('') : '<div class="p-8 text-center text-gray-300"><i class="fas fa-inbox text-3xl mb-2 block"></i><p class="text-sm">لا توجد ورديات مسجلة</p></div>'}
-                        </div>
-                    </div>
-                `;
-            },
-
-            showShiftDetail(shiftId) {
-                const container = document.getElementById('walletContent');
-                if (!container) return;
-                const r = this._shiftRecords.find(s => s.id === shiftId);
-                if (!r) return;
-
-                const dateStr = r.createdAt ? new Date(r.createdAt).toLocaleDateString('ar-EG', { year:'numeric', month:'long', day:'numeric', weekday:'long' }) : '';
-                const timeStr = r.createdAt ? new Date(r.createdAt).toLocaleTimeString('ar-EG', { hour:'2-digit', minute:'2-digit' }) : '';
-                const totalDiffClass = r.totalDiff > 0.01 ? 'text-green-500' : r.totalDiff < -0.01 ? 'text-red-500' : 'text-accent';
-                const totalDiffText = Math.abs(r.totalDiff) < 0.01 ? 'مطابق ✓' : r.totalDiff > 0 ? `+${r.totalDiff.toFixed(2)} زيادة` : `${r.totalDiff.toFixed(2)} عجز`;
-
-                const walletEntries = r.wallets ? Object.entries(r.wallets) : [];
-
-                container.innerHTML = `
-                    <div class="mb-4">
-                        <button onclick="WalletModule.showShiftHistory()" class="bg-primary hover:bg-primaryLight text-white px-4 py-2 rounded-xl text-sm font-bold transition"><i class="fas fa-arrow-right ml-1"></i> رجوع للسجل</button>
-                    </div>
-
-                    <!-- Header -->
-                    <div class="bg-gradient-to-l from-amber-500 to-orange-600 rounded-2xl p-6 text-white mb-5">
-                        <div class="flex items-center gap-3 mb-3">
-                            <div class="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center"><i class="fas fa-hand-holding-dollar text-2xl"></i></div>
-                            <div>
-                                <h2 class="text-xl font-black">تفاصيل الوردية</h2>
-                                <p class="text-white/70 text-sm">${dateStr} — ${timeStr}</p>
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-3 gap-3 mt-4">
-                            <div class="bg-white/15 rounded-xl p-3 text-center">
-                                <p class="text-white/60 text-[10px]">المتوقع</p>
-                                <p class="text-xl font-black mt-1">${formatCurrency(r.totalExpected)}</p>
-                            </div>
-                            <div class="bg-white/15 rounded-xl p-3 text-center">
-                                <p class="text-white/60 text-[10px]">المُستلم</p>
-                                <p class="text-xl font-black mt-1">${formatCurrency(r.totalReceived)}</p>
-                            </div>
-                            <div class="bg-white/15 rounded-xl p-3 text-center">
-                                <p class="text-white/60 text-[10px]">الفرق</p>
-                                <p class="text-xl font-black mt-1">${totalDiffText}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Wallet Breakdown -->
-                    <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden mb-5">
-                        <div class="p-4 border-b border-gray-100 bg-amber-50/50">
-                            <h3 class="font-bold text-sm text-gray-800 flex items-center gap-2"><i class="fas fa-wallet text-amber-500"></i> تفصيل المحافظ</h3>
-                        </div>
-                        <div class="divide-y divide-gray-50">
-                            ${walletEntries.map(([key, d]) => {
-                                const meta = this._getWalletMeta(key);
-                                const diffColor = d.diff > 0.01 ? 'text-green-600' : d.diff < -0.01 ? 'text-red-500' : 'text-gray-400';
-                                const diffLabel = Math.abs(d.diff) < 0.01 ? 'مطابق ✓' : d.diff > 0 ? `+${d.diff.toFixed(2)} زيادة` : `${d.diff.toFixed(2)} عجز`;
-                                return `
-                                <div class="flex items-center gap-4 p-4">
-                                    <div class="w-10 h-10 rounded-xl bg-gradient-to-l ${meta.gradient} flex items-center justify-center text-white shrink-0"><i class="${meta.icon}"></i></div>
-                                    <div class="flex-1">
-                                        <p class="font-bold text-sm text-gray-900">${d.walletName || meta.name}</p>
-                                        <div class="flex gap-3 text-[11px] mt-0.5">
-                                            <span class="text-gray-400">متوقع: ${formatCurrency(d.expected)}</span>
-                                            <span class="text-gray-900 font-bold">مُستلم: ${formatCurrency(d.received)}</span>
-                                        </div>
-                                    </div>
-                                    <span class="text-sm font-bold ${diffColor}">${diffLabel}</span>
-                                </div>`;
-                            }).join('') || '<div class="p-6 text-center text-gray-300 text-sm">لا يوجد بيانات محافظ</div>'}
-                        </div>
-                    </div>
-
-                    ${r.notes ? `
-                    <div class="bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 mb-5">
-                        <h3 class="font-bold text-sm text-amber-800 mb-2 flex items-center gap-2"><i class="fas fa-sticky-note text-amber-500"></i> ملاحظات</h3>
-                        <p class="text-sm text-amber-900">${r.notes}</p>
-                    </div>` : ''}
-
-                    <div class="bg-gray-50 rounded-xl p-3 text-center text-xs text-gray-400">
-                        <i class="fas fa-user ml-1"></i> تم الاستلام بواسطة: <strong class="text-gray-600">${r.receivedByName || r.receivedBy}</strong>
-                        | <i class="fas fa-receipt ml-1"></i> ${r.ordersCount || 0} طلب
                     </div>
                 `;
             }
@@ -9803,6 +9733,7 @@ ${'<'}/script></body></html>`;
             document.getElementById('linkDigitalPricing')?.classList.add('hidden-section');
             document.getElementById('linkSuppliers')?.classList.add('hidden-section');
             document.getElementById('linkShipping')?.classList.add('hidden-section');
+            document.getElementById('linkCatalog')?.classList.add('hidden-section');
             document.getElementById('workerSectionLabel')?.classList.add('hidden-section');
             document.getElementById('linkExecution')?.classList.add('hidden-section');
             document.getElementById('linkWorkerWallet')?.classList.add('hidden-section');
@@ -9816,6 +9747,7 @@ ${'<'}/script></body></html>`;
                 document.getElementById('linkDigitalPricing')?.classList.remove('hidden-section');
                 document.getElementById('linkSuppliers')?.classList.remove('hidden-section');
                 document.getElementById('linkShipping')?.classList.remove('hidden-section');
+                document.getElementById('linkCatalog')?.classList.remove('hidden-section');
                 // Show all sidebar links
                 document.querySelector('[data-section="customers"]')?.classList.remove('hidden-section');
                 document.querySelector('[data-section="employees"]')?.classList.remove('hidden-section');
@@ -9869,6 +9801,7 @@ ${'<'}/script></body></html>`;
             try {
                 await DataSvc.init();
                 AppState.orders = DataSvc.getOrders();
+                if (typeof ProductCatalog !== 'undefined') ProductCatalog.init().catch(e => console.warn('Catalog init:', e));
             } catch (e) {
                 console.error('Failed to load data:', e);
             }
@@ -10060,8 +9993,11 @@ ${'<'}/script></body></html>`;
     <!-- ===== Pricing Admin ===== -->
     <script src="assets/js/pricing-admin.js?v=3"></script>
     
+    <!-- ===== Product Catalog ===== -->
+    <script src="assets/js/product-catalog.js?v=1"></script>
+
     <!-- ===== Order Products (uses pricing modules) ===== -->
-    <script src="assets/js/order-products.js?v=3"></script>
+    <script src="assets/js/order-products.js?v=4"></script>
     <script src="assets/js/digital-printing.js"></script>
     <script src="assets/js/suppliers.js"></script>
     <script src="assets/js/shipping.js"></script>
@@ -10117,10 +10053,7 @@ ${'<'}/script></body></html>`;
                 'beni_suef','minya','assiut','sohag','qena','luxor','aswan'
             ];
         }
-        // Initialize PricingAdmin
-        if (typeof PricingAdmin !== 'undefined') {
-            PricingAdmin._initialize().catch(e => console.warn('PricingAdmin init:', e));
-        }
+        // PricingAdmin loads lazily when opening pricing section (avoids startup freeze)
         // Initialize OrderProducts
         if (typeof OrderProducts !== 'undefined') {
             OrderProducts.init();

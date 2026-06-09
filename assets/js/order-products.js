@@ -863,7 +863,8 @@ const OrderProducts = {
             'cladding_letters': 'واجهات كلادينج و حروف',
             'kraft_bags': 'شنط كرافت',
             'Offer': 'عرض',
-            'custom': 'صنف مخصص'
+            'custom': 'صنف مخصص',
+            'catalog': 'كتالوج'
         };
 
         if (this.currentProducts.length === 0) {
@@ -881,7 +882,23 @@ const OrderProducts = {
         container.innerHTML = this.currentProducts.map((product, index) => {
           try {
             let details = '';
-            if (product.type === 'custom' || product.isCustom) {
+            if (product.type === 'catalog') {
+                const parts = [];
+                if (product.catalogGroupName) {
+                    parts.push('القسم: ' + product.catalogGroupName);
+                    if (product.catalogSubcategoryName) parts.push('فرعي: ' + product.catalogSubcategoryName);
+                    parts.push('المنتج: ' + (product.productName || ''));
+                } else {
+                    parts.push(product.productName || product.catalogName || 'منتج كتالوج');
+                    if (product.catalogSpecsText) parts.push(product.catalogSpecsText);
+                    else if (product.catalogSpecs) parts.push(Object.values(product.catalogSpecs).map(s => s.display || s.value).join('، '));
+                }
+                parts.push('الكمية: ' + (product.quantity || 1));
+                if (product.pendingPricing) parts.push('السعر: حسب المقاس');
+                else if (product.unitPrice) parts.push((product.unitLabel || 'سعر الوحدة') + ': ' + Number(product.unitPrice).toFixed(2) + ' ج.م');
+                if (product.stampDesignText) parts.push('نص الختم: ' + product.stampDesignText);
+                details = parts.join(' | ');
+            } else if (product.type === 'custom' || product.isCustom) {
                 const parts = [product.productName || 'صنف مخصص'];
                 if (product.size) parts.push(product.size);
                 if (product.quantity > 1) parts.push('الكمية: ' + product.quantity);
@@ -1015,6 +1032,9 @@ const OrderProducts = {
             const sellingPrice = (product.sellingPrice != null ? product.sellingPrice : product.price) || 0;
             const costPrice = product.productionCost != null ? product.productionCost : (product.calculation && product.calculation.productionCost != null ? product.calculation.productionCost : 0);
             const isAdmin = typeof App !== 'undefined' && AppState.currentUser && AppState.currentUser.role === 'admin';
+            const displayName = product.type === 'catalog' ? (product.productName || product.catalogName) : (productNames[product.type] || product.productName || product.type);
+            const hasDesign = product.hasDesignFile || product.designFileUrl;
+            const designBtn = hasDesign ? `<button type="button" onclick="openProductDesignFile(OrderProducts.currentProducts.find(p=>p.id==${product.id}))" class="mt-2 text-[10px] bg-amber-50 text-amber-700 px-2 py-1 rounded-lg font-bold hover:bg-amber-100 transition"><i class="fas fa-palette ml-1"></i> ملف التصميم</button>` : '';
             const priceBlock = isAdmin
                 ? `<div class="text-sm space-y-1 mt-2"><div class="flex justify-between"><span class="text-gray-600">سعر التكلفة:</span><span class="font-bold text-blue-600">${Number(costPrice).toFixed(2)} ج.م</span></div><div class="flex justify-between"><span class="text-gray-600">سعر البيع:</span><span class="font-bold text-brandGold">${Number(sellingPrice).toFixed(2)} ج.م</span></div></div>`
                 : `<div class="font-bold text-brandGold text-lg mt-1">${Number(sellingPrice).toFixed(2)} ج.م</div>`;
@@ -1023,11 +1043,12 @@ const OrderProducts = {
                     <div class="flex justify-between items-start">
                         <div class="flex-1">
                             <div class="flex items-center gap-2 mb-2">
-                                <span class="font-bold text-gray-800">${productNames[product.type] || product.productName || product.type}</span>
+                                <span class="font-bold text-gray-800">${displayName}</span>
                                 <span class="text-xs bg-gray-100 px-2 py-1 rounded">#${index + 1}</span>
                             </div>
                             <div class="text-sm text-gray-600 mb-2">${details}</div>
                             ${priceBlock}
+                            ${designBtn}
                         </div>
                         <button type="button" onclick="OrderProducts.removeProduct(${product.id})" class="text-red-500 hover:text-red-700 p-2">
                             <i class="fas fa-trash"></i>

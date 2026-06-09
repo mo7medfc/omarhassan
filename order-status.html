@@ -322,7 +322,7 @@
             'ruler_frames': 'برواز مسطرة', 'shipping_flyers_clear_bags': 'فلاير شحن', 'plastic_bags': 'شنط بلاستيك',
             'paper_bags': 'شنط ورقية', 'brochures': 'برشورات', 'catalogs': 'كتالوجات',
             'acrylic_badge': 'اكريلك و باج', 'boxes': 'بوكسات', 'Stands': 'استندات',
-            'custom': 'صنف مخصص', 'Offer': 'عرض'
+            'custom': 'صنف مخصص', 'Offer': 'عرض', 'catalog': 'كتالوج'
         };
 
         // Timeline steps (simplified flow)
@@ -404,13 +404,21 @@
             let productsHTML = '';
             if (order.products && order.products.length > 0) {
                 productsHTML = order.products.map(p => {
-                    const name = p.isCustom ? (p.productName || 'صنف مخصص') : (productNames[p.type] || p.type);
+                    let name = p.isCustom ? (p.productName || 'صنف مخصص') : (p.type === 'catalog' ? (p.productName || p.catalogName) : (productNames[p.type] || p.type));
                     const price = p.sellingPrice != null ? p.sellingPrice : (p.price || 0);
                     const qty = p.quantity || 1;
+                    let specDetail = '';
+                    if (p.type === 'catalog' && p.catalogGroupName) {
+                        specDetail = esc([p.catalogGroupName, p.catalogSubcategoryName, p.unitPrice ? (p.unitLabel || 'سعر الوحدة') + ': ' + Number(p.unitPrice).toFixed(2) + ' ج.م' : ''].filter(Boolean).join(' • '));
+                    } else if (p.type === 'catalog' && p.catalogSpecsText) {
+                        specDetail = esc(p.catalogSpecsText);
+                    } else if (p.size) {
+                        specDetail = esc(p.size);
+                    }
                     return `<div class="product-item">
                         <div>
                             <div class="product-name">${esc(name)}</div>
-                            <div class="product-detail">الكمية: ${qty}${p.size ? ' • ' + esc(p.size) : ''}</div>
+                            <div class="product-detail">الكمية: ${qty}${specDetail ? ' • ' + specDetail : ''}</div>
                         </div>
                         <div class="product-price">${formatCurrency(price)}</div>
                     </div>`;

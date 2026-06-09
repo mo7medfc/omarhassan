@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>makram | حالة الطلب</title>
+    <title>Omar Hassan | حالة الطلب</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=Cairo:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -12,39 +12,71 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Tajawal', 'Cairo', sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            background: linear-gradient(135deg, #0A1628 0%, #0F1B2D 40%, #162644 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
             color: #e2e8f0;
+            position: relative;
+            overflow-x: hidden;
+        }
+        /* Arabic pattern background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg width='120' height='120' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M60 0 L120 60 L60 120 L0 60 Z' fill='none' stroke='%23C9A961' stroke-width='0.8' opacity='0.04'/%3E%3Ccircle cx='60' cy='60' r='20' fill='none' stroke='%23C9A961' stroke-width='0.6' opacity='0.04'/%3E%3Ccircle cx='60' cy='60' r='8' fill='none' stroke='%23C9A961' stroke-width='0.4' opacity='0.04'/%3E%3C/svg%3E");
+            background-size: 120px 120px;
+            pointer-events: none;
+            z-index: 0;
         }
         .container {
             max-width: 500px;
             width: 100%;
+            position: relative;
+            z-index: 1;
         }
         .brand {
             text-align: center;
             margin-bottom: 24px;
         }
+        .brand-logo {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+            margin-bottom: 8px;
+            filter: drop-shadow(0 4px 12px rgba(201,169,97,0.3));
+        }
         .brand h1 {
-            font-size: 36px;
+            font-size: 28px;
             font-weight: 900;
-            color: #fff;
+            color: #C9A961;
             letter-spacing: 3px;
+            text-shadow: 0 2px 12px rgba(201,169,97,0.2);
         }
         .brand p {
-            color: #45A5C4;
-            font-size: 13px;
+            color: rgba(201,169,97,0.5);
+            font-size: 11px;
             margin-top: 4px;
+            letter-spacing: 3px;
+        }
+        .brand-line {
+            width: 60px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #C9A961, transparent);
+            margin: 12px auto 0;
+            border-radius: 2px;
         }
         .card {
-            background: rgba(255,255,255,0.05);
+            background: rgba(15,27,45,0.85);
             backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.08);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(201,169,97,0.12);
             border-radius: 20px;
             overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 60px rgba(201,169,97,0.03);
         }
         .status-header {
             padding: 24px;
@@ -64,12 +96,12 @@
         }
         .info-section {
             padding: 20px 24px;
-            border-top: 1px solid rgba(255,255,255,0.06);
+            border-top: 1px solid rgba(201,169,97,0.08);
         }
         .info-section h3 {
             font-size: 12px;
             font-weight: 700;
-            color: #45A5C4;
+            color: #C9A961;
             margin-bottom: 12px;
             display: flex;
             align-items: center;
@@ -82,7 +114,7 @@
             padding: 8px 0;
         }
         .info-row:not(:last-child) {
-            border-bottom: 1px solid rgba(255,255,255,0.04);
+            border-bottom: 1px solid rgba(201,169,97,0.05);
         }
         .info-label {
             font-size: 13px;
@@ -95,8 +127,8 @@
             color: #e2e8f0;
         }
         .product-item {
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.05);
+            background: rgba(201,169,97,0.04);
+            border: 1px solid rgba(201,169,97,0.08);
             border-radius: 12px;
             padding: 12px;
             margin-bottom: 8px;
@@ -117,21 +149,21 @@
         .product-price {
             font-size: 14px;
             font-weight: 800;
-            color: #45A5C4;
+            color: #C9A961;
             white-space: nowrap;
         }
         .price-summary {
-            background: linear-gradient(135deg, #45A5C4, #2E8BA8);
+            background: linear-gradient(135deg, #C9A961, #A68B3E);
             padding: 20px 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-        .price-summary .label { font-size: 14px; color: rgba(255,255,255,0.8); font-weight: 600; }
-        .price-summary .amount { font-size: 24px; font-weight: 900; color: #fff; }
+        .price-summary .label { font-size: 14px; color: rgba(15,27,45,0.7); font-weight: 600; }
+        .price-summary .amount { font-size: 24px; font-weight: 900; color: #0F1B2D; }
         .timeline {
             padding: 20px 24px;
-            border-top: 1px solid rgba(255,255,255,0.06);
+            border-top: 1px solid rgba(201,169,97,0.08);
         }
         .timeline-item {
             display: flex;
@@ -146,10 +178,10 @@
             top: 28px;
             bottom: 0;
             width: 2px;
-            background: rgba(255,255,255,0.08);
+            background: rgba(201,169,97,0.1);
         }
         .timeline-item.active::before {
-            background: #45A5C4;
+            background: #C9A961;
         }
         .timeline-dot {
             width: 24px; height: 24px;
@@ -157,14 +189,14 @@
             display: flex; align-items: center; justify-content: center;
             font-size: 10px;
             flex-shrink: 0;
-            border: 2px solid rgba(255,255,255,0.1);
-            background: rgba(255,255,255,0.03);
+            border: 2px solid rgba(201,169,97,0.15);
+            background: rgba(201,169,97,0.03);
             color: #64748b;
         }
         .timeline-dot.done {
-            background: #45A5C4;
-            border-color: #45A5C4;
-            color: #fff;
+            background: #C9A961;
+            border-color: #C9A961;
+            color: #0F1B2D;
         }
         .timeline-dot.current {
             background: #f59e0b;
@@ -180,7 +212,7 @@
             font-size: 13px;
             font-weight: 600;
         }
-        .timeline-text.done { color: #45A5C4; }
+        .timeline-text.done { color: #C9A961; }
         .timeline-text.current { color: #f59e0b; }
         .timeline-text.pending { color: #475569; }
         .loading {
@@ -189,7 +221,7 @@
         }
         .loading i {
             font-size: 40px;
-            color: #45A5C4;
+            color: #C9A961;
             animation: spin 1s linear infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -219,7 +251,7 @@
         }
         .deposit-bar-bg {
             height: 8px;
-            background: rgba(255,255,255,0.1);
+            background: rgba(201,169,97,0.1);
             border-radius: 10px;
             overflow: hidden;
             margin-top: 8px;
@@ -227,7 +259,7 @@
         .deposit-bar {
             height: 100%;
             border-radius: 10px;
-            background: linear-gradient(90deg, #45A5C4, #10b981);
+            background: linear-gradient(90deg, #C9A961, #10b981);
             transition: width 0.8s ease;
         }
     </style>
@@ -235,8 +267,10 @@
 <body>
     <div class="container">
         <div class="brand">
-            <h1>makram</h1>
-            <p>لجميع المطبوعات المتكاملة</p>
+            <img src="logo.png" alt="Omar Hassan" class="brand-logo">
+            <h1>Omar Hassan</h1>
+            <p>PRINTING & DESIGN</p>
+            <div class="brand-line"></div>
         </div>
         <div class="card" id="content">
             <div class="loading">
@@ -248,12 +282,13 @@
 
     <script>
         const firebaseConfig = {
-            apiKey: "AIzaSyAGQ7WbksLIPpFT_58O4gsgkkOTB_NWiVk",
-            authDomain: "ragab-a1dab.firebaseapp.com",
-            projectId: "ragab-a1dab",
-            storageBucket: "ragab-a1dab.firebasestorage.app",
-            messagingSenderId: "835643523081",
-            appId: "1:835643523081:web:1d97ec9d266dc735fff8d8"
+            apiKey: "AIzaSyD1ZCK7df_l0DEchGEo2g9j0GkKtiMFw6E",
+            authDomain: "omarhassan-f93d4.firebaseapp.com",
+            projectId: "omarhassan-f93d4",
+            storageBucket: "omarhassan-f93d4.firebasestorage.app",
+            messagingSenderId: "848317075052",
+            appId: "1:848317075052:web:9610ae3c7433c9f1551249",
+            measurementId: "G-JF1P9DLLDJ"
         };
 
         if (!firebase.apps || firebase.apps.length === 0) {
@@ -287,7 +322,7 @@
             'ruler_frames': 'برواز مسطرة', 'shipping_flyers_clear_bags': 'فلاير شحن', 'plastic_bags': 'شنط بلاستيك',
             'paper_bags': 'شنط ورقية', 'brochures': 'برشورات', 'catalogs': 'كتالوجات',
             'acrylic_badge': 'اكريلك و باج', 'boxes': 'بوكسات', 'Stands': 'استندات',
-            'custom': 'صنف مخصص', 'Offer': 'عرض'
+            'custom': 'صنف مخصص', 'Offer': 'عرض', 'catalog': 'كتالوج'
         };
 
         // Timeline steps (simplified flow)
@@ -436,7 +471,7 @@
                     <h3><i class="fas fa-coins"></i> المدفوعات</h3>
                     <div class="info-row">
                         <span class="info-label">الإجمالي</span>
-                        <span class="info-value" style="color:#45A5C4;font-size:16px">${formatCurrency(totalPrice)}</span>
+                        <span class="info-value" style="color:#C9A961;font-size:16px">${formatCurrency(totalPrice)}</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">المدفوع (عربون)</span>
@@ -454,15 +489,15 @@
 
                 <!-- Timeline -->
                 <div class="timeline">
-                    <h3 style="font-size:12px;font-weight:700;color:#45A5C4;margin-bottom:16px;display:flex;align-items:center;gap:6px">
+                    <h3 style="font-size:12px;font-weight:700;color:#C9A961;margin-bottom:16px;display:flex;align-items:center;gap:6px">
                         <i class="fas fa-route"></i> مسار الطلب
                     </h3>
                     ${timelineHTML}
                 </div>
 
                 <!-- Footer -->
-                <div style="text-align:center;padding:16px;border-top:1px solid rgba(255,255,255,0.06);font-size:11px;color:#475569">
-                    <p>makram — لجميع المطبوعات المتكاملة</p>
+                <div style="text-align:center;padding:16px;border-top:1px solid rgba(201,169,97,0.08);font-size:11px;color:rgba(201,169,97,0.3)">
+                    <p>Omar Hassan — PRINTING & DESIGN</p>
                 </div>
             `;
         }
