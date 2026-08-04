@@ -297,20 +297,25 @@
         const db = firebase.firestore();
 
         const statusConfig = {
-            'pending':                    { text: 'قيد الإدخال',              icon: 'fa-clock',          bg: '#f59e0b', order: 1 },
-            'design':                     { text: 'في انتظار التصميم',        icon: 'fa-palette',        bg: '#8b5cf6', order: 2 },
-            'design_in_progress':         { text: 'جاري التصميم',            icon: 'fa-pen-ruler',      bg: '#8b5cf6', order: 3 },
-            'design_done':                { text: 'انتهى التصميم',           icon: 'fa-check-circle',   bg: '#10b981', order: 4 },
-            'awaiting_production_approval': { text: 'في انتظار موافقة التنفيذ', icon: 'fa-hourglass-half', bg: '#f59e0b', order: 5 },
-            'printing':                   { text: 'قيد التنفيذ',             icon: 'fa-print',          bg: '#3b82f6', order: 6 },
-            'in_printing_house':          { text: 'في المطبعة',              icon: 'fa-industry',       bg: '#3b82f6', order: 7 },
-            'ready_at_branch':            { text: 'جاهز في الفرع',           icon: 'fa-store',          bg: '#10b981', order: 8 },
-            'awaiting_shipping_approval': { text: 'في انتظار موافقة الشحن',   icon: 'fa-truck-loading',  bg: '#f59e0b', order: 9 },
-            'assigned_to_shipping':       { text: 'معتمد للشحن',             icon: 'fa-shipping-fast',  bg: '#6366f1', order: 10 },
-            'delivered':                  { text: 'تم التسليم',              icon: 'fa-box-open',       bg: '#10b981', order: 11 },
-            'customer_received':          { text: 'تم تسليم العميل',         icon: 'fa-handshake',      bg: '#10b981', order: 12 },
-            'collected':                  { text: 'تم التحصيل',              icon: 'fa-coins',          bg: '#10b981', order: 13 },
-            'fully_paid':                 { text: 'تم الدفع بالكامل',        icon: 'fa-check-double',   bg: '#10b981', order: 14 }
+            'pending':                    { text: 'قيد الانتظار',              icon: 'fa-clock',          bg: '#f59e0b' },
+            'in_design':                  { text: 'قيد التصميم',               icon: 'fa-palette',        bg: '#7C3AED' },
+            'design':                     { text: 'في انتظار التصميم',        icon: 'fa-palette',        bg: '#8b5cf6' },
+            'design_in_progress':         { text: 'جاري التصميم',            icon: 'fa-pen-ruler',      bg: '#8b5cf6' },
+            'design_done':                { text: 'انتهى التصميم',           icon: 'fa-check-circle',   bg: '#10b981' },
+            'awaiting_production_approval': { text: 'في انتظار موافقة التنفيذ', icon: 'fa-hourglass-half', bg: '#f59e0b' },
+            'in_progress':                { text: 'قيد التنفيذ',             icon: 'fa-print',          bg: '#3b82f6' },
+            'printing':                   { text: 'قيد التنفيذ',             icon: 'fa-print',          bg: '#3b82f6' },
+            'in_printing_house':          { text: 'في المطبعة',              icon: 'fa-industry',       bg: '#3b82f6' },
+            'ready':                      { text: 'جاهز للتسليم',            icon: 'fa-check',          bg: '#10b981' },
+            'ready_at_branch':            { text: 'جاهز في الفرع',           icon: 'fa-store',          bg: '#10b981' },
+            'awaiting_shipping_approval': { text: 'في انتظار موافقة الشحن',   icon: 'fa-truck-loading',  bg: '#f59e0b' },
+            'assigned_to_shipping':       { text: 'معتمد للشحن',             icon: 'fa-shipping-fast',  bg: '#6366f1' },
+            'shipped':                    { text: 'مع شركة/مندوب الشحن',     icon: 'fa-truck-fast',     bg: '#6366f1' },
+            'delivered':                  { text: 'تم التسليم',              icon: 'fa-box-open',       bg: '#10b981' },
+            'customer_received':          { text: 'تم تسليم العميل',         icon: 'fa-handshake',      bg: '#10b981' },
+            'collected':                  { text: 'تم التحصيل',              icon: 'fa-coins',          bg: '#10b981' },
+            'fully_paid':                 { text: 'تم الدفع بالكامل',        icon: 'fa-check-double',   bg: '#10b981' },
+            'cancelled':                  { text: 'ملغي',                    icon: 'fa-ban',            bg: '#ef4444' }
         };
 
         const productNames = {
@@ -325,26 +330,41 @@
             'custom': 'صنف مخصص', 'Offer': 'عرض', 'catalog': 'كتالوج'
         };
 
-        // Timeline steps (simplified flow)
-        const timelineSteps = [
-            { key: 'pending', label: 'تم استلام الطلب' },
-            { key: 'design', label: 'التصميم' },
-            { key: 'printing', label: 'التنفيذ / الطباعة' },
-            { key: 'ready_at_branch', label: 'جاهز للاستلام' },
-            { key: 'delivered', label: 'تم التسليم' }
-        ];
+        function buildTimelineSteps(order) {
+            const steps = [
+                { key: 'received', label: 'تم استلام الطلب' },
+                { key: 'design', label: 'التصميم' },
+                { key: 'printing', label: 'التنفيذ / الطباعة' },
+                { key: 'ready', label: order.isShipping ? 'جاهز للشحن' : 'جاهز للاستلام' }
+            ];
+            if (order.isShipping) {
+                steps.push({ key: 'shipped', label: 'مع شركة / مندوب الشحن' });
+            }
+            steps.push({ key: 'delivered', label: 'تم التسليم للعميل' });
+            return steps;
+        }
 
-        // Map detailed statuses to timeline step
-        function getTimelineIndex(status) {
+        function statusToTimelineKey(status, order) {
             const map = {
-                'pending': 0,
-                'design': 1, 'design_in_progress': 1, 'design_done': 1,
-                'awaiting_production_approval': 2, 'printing': 2, 'in_printing_house': 2,
-                'ready_at_branch': 3, 'in_branch': 3,
-                'awaiting_shipping_approval': 4, 'assigned_to_shipping': 4,
-                'delivered': 4, 'customer_received': 4, 'collected': 4, 'fully_paid': 4
+                pending: 'received',
+                in_design: 'design',
+                design: 'design', design_in_progress: 'design', design_done: 'design',
+                in_progress: 'printing', in_printing_house: 'printing', printing: 'printing',
+                awaiting_production_approval: 'printing',
+                ready_at_branch: 'ready', ready: 'ready', in_branch: 'ready',
+                awaiting_shipping_approval: 'ready', assigned_to_shipping: 'ready',
+                shipped: order.isShipping ? 'shipped' : 'ready',
+                delivered: 'delivered', customer_received: 'delivered', collected: 'delivered', fully_paid: 'delivered'
             };
-            return map[status] ?? 0;
+            return map[status] || 'received';
+        }
+
+        function getTimelineIndex(status, order) {
+            if (status === 'cancelled') return -1;
+            const steps = buildTimelineSteps(order);
+            const key = statusToTimelineKey(status, order);
+            const idx = steps.findIndex(s => s.key === key);
+            return idx >= 0 ? idx : 0;
         }
 
         function esc(str) {
@@ -396,21 +416,30 @@
             const shortId = orderId.toString().slice(-6);
             const totalPrice = order.price || 0;
             const deposit = order.deposit || 0;
-            const remaining = Math.max(0, totalPrice - deposit);
+            const remaining = order.collected === true ? 0 : Math.max(0, totalPrice - deposit);
             const paidPercent = totalPrice > 0 ? Math.min(100, (deposit / totalPrice) * 100) : 0;
-            const currentIdx = getTimelineIndex(order.status);
+            const timelineSteps = buildTimelineSteps(order);
+            const currentIdx = getTimelineIndex(order.status, order);
 
             // Products HTML
             let productsHTML = '';
             if (order.products && order.products.length > 0) {
                 productsHTML = order.products.map(p => {
-                    const name = p.isCustom ? (p.productName || 'صنف مخصص') : (productNames[p.type] || p.type);
+                    let name = p.isCustom ? (p.productName || 'صنف مخصص') : (p.type === 'catalog' ? (p.productName || p.catalogName) : (productNames[p.type] || p.type));
                     const price = p.sellingPrice != null ? p.sellingPrice : (p.price || 0);
                     const qty = p.quantity || 1;
+                    let specDetail = '';
+                    if (p.type === 'catalog' && p.catalogGroupName) {
+                        specDetail = esc([p.catalogGroupName, p.catalogSubcategoryName, p.unitPrice ? (p.unitLabel || 'سعر الوحدة') + ': ' + Number(p.unitPrice).toFixed(2) + ' ج.م' : ''].filter(Boolean).join(' • '));
+                    } else if (p.type === 'catalog' && p.catalogSpecsText) {
+                        specDetail = esc(p.catalogSpecsText);
+                    } else if (p.size) {
+                        specDetail = esc(p.size);
+                    }
                     return `<div class="product-item">
                         <div>
                             <div class="product-name">${esc(name)}</div>
-                            <div class="product-detail">الكمية: ${qty}${p.size ? ' • ' + esc(p.size) : ''}</div>
+                            <div class="product-detail">الكمية: ${qty}${specDetail ? ' • ' + specDetail : ''}</div>
                         </div>
                         <div class="product-price">${formatCurrency(price)}</div>
                     </div>`;
@@ -418,7 +447,9 @@
             }
 
             // Timeline HTML
-            const timelineHTML = timelineSteps.map((step, idx) => {
+            const timelineHTML = order.status === 'cancelled'
+                ? `<p style="text-align:center;color:#ef4444;font-size:13px;font-weight:700;padding:12px;background:#fef2f2;border-radius:10px">تم إلغاء هذا الطلب</p>`
+                : timelineSteps.map((step, idx) => {
                 let cls = 'pending';
                 let dotCls = '';
                 if (idx < currentIdx) { cls = 'done'; dotCls = 'done'; }
@@ -486,6 +517,16 @@
                     </div>
                     <div style="text-align:center;font-size:11px;color:#64748b;margin-top:6px">تم دفع ${Math.round(paidPercent)}% من الإجمالي</div>
                 </div>
+
+                ${order.isShipping ? `
+                <div class="info-section">
+                    <h3><i class="fas fa-truck-fast"></i> معلومات الشحن</h3>
+                    <div class="info-row">
+                        <span class="info-label">شركة الشحن</span>
+                        <span class="info-value">${esc(order.shippingCarrierName || '-')}</span>
+                    </div>
+                    ${order.shippingAddress ? `<div class="info-row"><span class="info-label">العنوان</span><span class="info-value" style="max-width:60%;text-align:left">${esc(order.shippingAddress)}</span></div>` : ''}
+                </div>` : ''}
 
                 <!-- Timeline -->
                 <div class="timeline">

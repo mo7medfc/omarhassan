@@ -97,7 +97,7 @@ const PricingAdmin = {
         const _cats = [
             { group: 'طباعة وورق', emoji: '🖨️', items: [
                 { id: 'Offset', name: 'أوفست', icon: 'fa-print', color: '#4f46e5', bg: '#eef2ff' },
-                { id: 'digital_printing', name: 'قسم الدجيتال', icon: 'fa-layer-group', color: '#7c3aed', bg: '#f5f3ff' },
+                { id: 'digital_printing', name: 'ماكينة طباعة رقمية', icon: 'fa-layer-group', color: '#7c3aed', bg: '#f5f3ff' },
                 { id: 'PaperTypes', name: 'أنواع الورق', icon: 'fa-scroll', color: '#0369a1', bg: '#f0f9ff' },
                 { id: 'brochures', name: 'البرشورات', icon: 'fa-book-open', color: '#0891b2', bg: '#ecfeff' },
                 { id: 'catalogs', name: 'الكتالوجات', icon: 'fa-swatchbook', color: '#059669', bg: '#ecfdf5' },
@@ -175,13 +175,14 @@ const PricingAdmin = {
                 <div class="flex flex-wrap items-center justify-between gap-4 mb-5">
                     <div>
                         <h3 class="text-2xl font-extrabold text-gray-900">إدارة التسعير</h3>
-                        <p class="text-sm text-gray-500 mt-1">اختر الصنف لتعديل الأسعار</p>
+                        <p class="text-sm text-gray-500 mt-1">اختر الماكينة أو الصنف لتعديل الأسعار</p>
                     </div>
                     <div class="relative">
                         <i class="fas fa-search absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none"></i>
                         <input id="pricingSearchInput" type="text" placeholder="ابحث عن صنف..." oninput="PricingAdmin._filterCategories(this.value)" class="w-64 pr-9 pl-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold placeholder-gray-400 focus:outline-none focus:border-brandGold focus:ring-2 focus:ring-brandGold/20 transition">
                     </div>
                 </div>
+                ${typeof PrintMachines !== 'undefined' ? PrintMachines.galleryHtml() : ''}
                 <div class="flex flex-wrap gap-2 mb-5" id="pricingGroupTabs">
                     <button onclick="PricingAdmin._filterGroup('')" class="px-3 py-1.5 rounded-full text-xs font-bold bg-gray-900 text-white transition hover:bg-gray-700 _pg_tab _pg_active">الكل</button>
                     ${_cats.map(g => `<button onclick="PricingAdmin._filterGroup('${g.group}')" class="px-3 py-1.5 rounded-full text-xs font-bold bg-gray-100 text-gray-600 transition hover:bg-gray-200 _pg_tab">${g.emoji} ${g.group}</button>`).join('')}
@@ -6934,8 +6935,25 @@ const PricingAdmin = {
         }
     },
 
+    async openMachine(machineId) {
+        const machine = (typeof PrintMachines !== 'undefined') ? PrintMachines.getById(machineId) : null;
+        if (!machine) {
+            Swal.fire('تنبيه', 'الماكينة غير موجودة', 'info');
+            return;
+        }
+        if (!machine.ready || !machine.pricingCategory) {
+            Swal.fire({ icon: 'info', title: 'قريباً', text: 'تسعير هذه الماكينة هيظهر قريباً', timer: 1800, showConfirmButton: false });
+            return;
+        }
+        // الديجيتال: نفتح شاشة التكلفة/البيع مع بنود الماكينة
+        if (machine.pricingCategory === 'digital_printing') {
+            await this.render('digital_printing', 'cost');
+            return;
+        }
+        await this.render(machine.pricingCategory, 'selling');
+    },
+
     async renderDigitalPrintingCategory(pricingMode) {
-        const db = this._getDb();
         const isSell = pricingMode === 'selling';
         const collName = (typeof DigitalPrintingPricing !== 'undefined')
             ? (isSell ? DigitalPrintingPricing.SELL_COLLECTION : DigitalPrintingPricing.COST_COLLECTION)
@@ -6946,6 +6964,10 @@ const PricingAdmin = {
         const paperTypes = (typeof DigitalPrintingPricing !== 'undefined' && DigitalPrintingPricing.PAPER_TYPES)
             ? DigitalPrintingPricing.PAPER_TYPES
             : [];
+        const productItems = (typeof DigitalPrintingPricing !== 'undefined' && DigitalPrintingPricing.getProductItems)
+            ? DigitalPrintingPricing.getProductItems()
+            : [];
+        const machine = (typeof PrintMachines !== 'undefined') ? PrintMachines.getById('digital') : null;
 
         let paperPrices = {};
         let lamination = { matteSingle: 0, matteDouble: 0, glossySingle: 0, glossyDouble: 0 };
@@ -6955,7 +6977,6 @@ const PricingAdmin = {
             creasingPer1000: 0, perforationPer1000: 0, cornerRoundingPer1000: 0,
             folderPocketPerPiece: 0, bagAssemblyPerBag: 0, paperCuttingPer1000: 0
         };
-        const stanRollSizes = (typeof DigitalPrintingPricing !== 'undefined' && DigitalPrintingPricing.STAN_ROLL_SIZES) ? DigitalPrintingPricing.STAN_ROLL_SIZES : [];
         try {
             const doc = await this._getColl(collName).doc(configDocId).get();
             if (doc.exists) {
@@ -6969,62 +6990,119 @@ const PricingAdmin = {
             console.error('Error loading digital printing pricing:', e);
         }
 
-        const stanRollRows = stanRollSizes.map(s => {
-            const price = stanRoll[s.id] != null ? stanRoll[s.id] : 0;
-            return `<tr>
-                <td class="p-3 font-bold text-gray-800">${s.nameAr}</td>
-                <td class="p-2"><input type="number" step="0.01" min="0" value="${price}" onchange="PricingAdmin.saveDigitalPrintingPrice('${configDocId}', '${pricingMode}', 'stanRoll', '${s.id}', 'price', this.value)" class="w-full border border-gray-300 p-2 rounded text-sm"></td>
-            </tr>`;
-        }).join('');
+        // لو التكلفة فاضية — عبّي من قائمة الصياد افتراضياً في العرض فقط
+        if (!isSell && (!paperPrices || !Object.keys(paperPrices).length) && typeof DigitalPrintingPricing !== 'undefined') {
+            paperPrices = DigitalPrintingPricing.getDefaultCostPaperPrices();
+        }
+
+        const numCell = (paperId, field, value, enabled) => {
+            if (!enabled) {
+                return `<td class="p-2 text-center text-gray-300 text-sm">—</td>`;
+            }
+            const v = value != null && value !== '' ? value : 0;
+            return `<td class="p-2"><input type="number" step="0.01" min="0" value="${v}"
+                onchange="PricingAdmin.saveDigitalPrintingPrice('${configDocId}', '${pricingMode}', 'paperPrices', '${paperId}', '${field}', this.value)"
+                class="w-full min-w-[72px] border border-gray-300 p-2 rounded text-sm font-bold ${isSell ? 'text-emerald-700' : 'text-rose-700'}"></td>`;
+        };
 
         const paperRows = paperTypes.map(p => {
             const pp = paperPrices[p.id] || {};
-            const priceSingle = pp.priceSingle != null ? pp.priceSingle : 0;
-            const priceDouble = pp.priceDouble != null ? pp.priceDouble : 0;
-            return `<tr>
-                <td class="p-3 font-bold text-gray-800">${p.nameAr}</td>
-                <td class="p-2"><input type="number" step="0.01" min="0" value="${priceSingle}" onchange="PricingAdmin.saveDigitalPrintingPrice('${configDocId}', '${pricingMode}', 'paperPrices', '${p.id}', 'priceSingle', this.value)" class="w-full border border-gray-300 p-2 rounded text-sm"></td>
-                <td class="p-2"><input type="number" step="0.01" min="0" value="${priceDouble}" onchange="PricingAdmin.saveDigitalPrintingPrice('${configDocId}', '${pricingMode}', 'paperPrices', '${p.id}', 'priceDouble', this.value)" class="w-full border border-gray-300 p-2 rounded text-sm"></td>
+            const def = (typeof DigitalPrintingPricing !== 'undefined' && DigitalPrintingPricing.DEFAULT_COST_PAPER_PRICES)
+                ? (DigitalPrintingPricing.DEFAULT_COST_PAPER_PRICES[p.id] || {})
+                : {};
+            const supportDouble = def.priceDouble != null || pp.priceDouble > 0;
+            const supportCel1 = !!p.cellophaneSingle || (def.cellophaneSingle != null);
+            const supportCel2 = !!p.cellophaneDouble || (def.cellophaneDouble != null);
+            return `<tr class="hover:bg-gray-50">
+                <td class="p-3 font-bold text-gray-800 whitespace-nowrap">${p.nameAr}</td>
+                ${numCell(p.id, 'priceSingle', pp.priceSingle, true)}
+                ${numCell(p.id, 'priceDouble', pp.priceDouble, supportDouble)}
+                ${numCell(p.id, 'cellophaneSingle', pp.cellophaneSingle, supportCel1)}
+                ${numCell(p.id, 'cellophaneDouble', pp.cellophaneDouble, supportCel2)}
             </tr>`;
         }).join('');
 
+        const itemsHtml = productItems.map(it => `
+            <div class="flex items-center gap-2 px-3 py-2 rounded-xl bg-violet-50 border border-violet-100">
+                <i class="fas fa-check text-violet-500 text-xs"></i>
+                <span class="text-sm font-bold text-violet-900">${it.nameAr}</span>
+            </div>`).join('');
+
         return `
             <div class="space-y-6">
-                <div class="flex justify-between items-center mb-6">
-                    <div>
-                        <h3 class="text-2xl font-bold text-gray-900 mb-2">قسم الدجيتال — ${isSell ? 'سعر البيع' : 'سعر التكلفة'}</h3>
-                        <p class="text-gray-600">لوحة 32×47 سم. سعر الورقة يشمل الطباعة (وجه واحد / وجهين).</p>
+                <div class="rounded-2xl overflow-hidden border border-violet-200 bg-white shadow-sm">
+                    <div class="grid md:grid-cols-[220px_1fr] gap-0">
+                        <div class="bg-slate-100 aspect-[4/3] md:aspect-auto md:min-h-[180px] relative overflow-hidden">
+                            <img src="${machine ? machine.image : 'assets/images/machines/digital.jpg'}" alt="ديجيتال" class="w-full h-full object-cover" onerror="this.parentElement.innerHTML='<div class=\\'flex items-center justify-center h-full min-h-[160px] bg-violet-900\\'><i class=\\'fas fa-print text-5xl text-white/40\\'></i></div>'">
+                        </div>
+                        <div class="p-5 md:p-6">
+                            <div class="flex flex-wrap items-start justify-between gap-3 mb-3">
+                                <div>
+                                    <p class="text-xs font-bold text-violet-600 mb-1">ماكينة الطباعة</p>
+                                    <h3 class="text-2xl font-extrabold text-gray-900">ماكينة طباعة رقمية</h3>
+                                    <p class="text-sm text-gray-500 mt-1">تسعير الورق — لوحة 32×47 سم · يشمل الطباعة</p>
+                                </div>
+                                <button onclick="PricingAdmin.render()" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-xl font-bold hover:bg-gray-200 transition text-sm">
+                                    <i class="fas fa-arrow-right ml-1"></i> رجوع للماكينات
+                                </button>
+                            </div>
+                            <div class="flex flex-wrap gap-2 mb-4">
+                                <button onclick="PricingAdmin.render('digital_printing','cost')" class="px-4 py-2 rounded-xl text-sm font-extrabold transition ${!isSell ? 'bg-rose-600 text-white shadow' : 'bg-rose-50 text-rose-700 hover:bg-rose-100'}">
+                                    <i class="fas fa-calculator ml-1"></i> سعر التكلفة
+                                </button>
+                                <button onclick="PricingAdmin.render('digital_printing','selling')" class="px-4 py-2 rounded-xl text-sm font-extrabold transition ${isSell ? 'bg-emerald-600 text-white shadow' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'}">
+                                    <i class="fas fa-tags ml-1"></i> سعر البيع
+                                </button>
+                                ${!isSell ? `<button onclick="PricingAdmin.seedDigitalCostPrices()" class="px-4 py-2 rounded-xl text-sm font-bold bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200">
+                                    <i class="fas fa-download ml-1"></i> تحميل أسعار التكلفة الافتراضية
+                                </button>` : `<button onclick="PricingAdmin.copyDigitalCostToSell()" class="px-4 py-2 rounded-xl text-sm font-bold bg-blue-50 text-blue-800 hover:bg-blue-100 border border-blue-200">
+                                    <i class="fas fa-copy ml-1"></i> نسخ التكلفة كأساس للبيع
+                                </button>`}
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-gray-500 mb-2">بنود الديجيتال</p>
+                                <div class="flex flex-wrap gap-2">${itemsHtml}</div>
+                            </div>
+                        </div>
                     </div>
-                    <button onclick="PricingAdmin.render('digital_printing')" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-bold hover:bg-gray-300 transition">
-                        <i class="fas fa-arrow-right ml-2"></i> رجوع
-                    </button>
                 </div>
-                <div class="bg-white p-6 rounded-xl border border-gray-200 mb-6">
-                    <h4 class="font-bold text-gray-800 mb-4">أسعار الورق (ج.م/ورقة — يشمل الطباعة)</h4>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-right">
-                            <thead class="bg-gray-100 text-gray-700 text-sm border-b border-gray-200">
+
+                <div class="bg-white p-5 sm:p-6 rounded-2xl border border-gray-200">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+                        <h4 class="font-extrabold text-gray-800">
+                            أسعار الورق — <span class="${isSell ? 'text-emerald-600' : 'text-rose-600'}">${isSell ? 'بيع' : 'تكلفة'}</span>
+                            <span class="text-sm font-bold text-gray-400">(ج.م / ورقة)</span>
+                        </h4>
+                        ${!isSell ? `<p class="text-xs text-amber-700 bg-amber-50 px-3 py-1.5 rounded-lg font-semibold"><i class="fas fa-info-circle ml-1"></i>${(typeof DigitalPrintingPricing !== 'undefined' && DigitalPrintingPricing.COST_NOTE) ? DigitalPrintingPricing.COST_NOTE : 'لأكثر من 10 ورقات'}</p>` : ''}
+                    </div>
+                    <div class="overflow-x-auto rounded-xl border border-gray-100">
+                        <table class="w-full text-right min-w-[640px]">
+                            <thead class="bg-slate-900 text-white text-xs sm:text-sm">
                                 <tr>
-                                    <th class="p-3">نوع الورق</th>
-                                    <th class="p-3">وجه واحد</th>
-                                    <th class="p-3">وجهين</th>
+                                    <th class="p-3 font-bold">نوع الورق</th>
+                                    <th class="p-3 font-bold">وجه واحد</th>
+                                    <th class="p-3 font-bold">وجهين</th>
+                                    <th class="p-3 font-bold">سلوفان وجه</th>
+                                    <th class="p-3 font-bold">سلوفان وجهين</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-200">${paperRows}</tbody>
+                            <tbody class="divide-y divide-gray-100">${paperRows}</tbody>
                         </table>
                     </div>
                 </div>
-                <div class="bg-white p-6 rounded-xl border border-gray-200 mb-6">
-                    <h4 class="font-bold text-gray-800 mb-4">سلفان (بالفرخ)</h4>
+
+                <div class="bg-white p-6 rounded-2xl border border-gray-200">
+                    <h4 class="font-bold text-gray-800 mb-4">سلفان عام (اختياري — بالفرخ)</h4>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                        <div><label class="block text-gray-700 mb-1">سلفان مط وجه واحد (بالفرخ)</label><input type="number" step="0.01" min="0" value="${lamination.matteSingle != null ? lamination.matteSingle : 0}" onchange="PricingAdmin.saveDigitalPrintingPrice('${configDocId}', '${pricingMode}', 'lamination', null, 'matteSingle', this.value)" class="w-full border border-gray-300 p-2 rounded"></div>
-                        <div><label class="block text-gray-700 mb-1">سلفان مط وجهين (بالفرخ)</label><input type="number" step="0.01" min="0" value="${lamination.matteDouble != null ? lamination.matteDouble : 0}" onchange="PricingAdmin.saveDigitalPrintingPrice('${configDocId}', '${pricingMode}', 'lamination', null, 'matteDouble', this.value)" class="w-full border border-gray-300 p-2 rounded"></div>
-                        <div><label class="block text-gray-700 mb-1">سلفان لامع وجه واحد (بالفرخ)</label><input type="number" step="0.01" min="0" value="${lamination.glossySingle != null ? lamination.glossySingle : 0}" onchange="PricingAdmin.saveDigitalPrintingPrice('${configDocId}', '${pricingMode}', 'lamination', null, 'glossySingle', this.value)" class="w-full border border-gray-300 p-2 rounded"></div>
-                        <div><label class="block text-gray-700 mb-1">سلفان لامع وجهين (بالفرخ)</label><input type="number" step="0.01" min="0" value="${lamination.glossyDouble != null ? lamination.glossyDouble : 0}" onchange="PricingAdmin.saveDigitalPrintingPrice('${configDocId}', '${pricingMode}', 'lamination', null, 'glossyDouble', this.value)" class="w-full border border-gray-300 p-2 rounded"></div>
+                        <div><label class="block text-gray-700 mb-1">سلفان مط وجه واحد</label><input type="number" step="0.01" min="0" value="${lamination.matteSingle != null ? lamination.matteSingle : 0}" onchange="PricingAdmin.saveDigitalPrintingPrice('${configDocId}', '${pricingMode}', 'lamination', null, 'matteSingle', this.value)" class="w-full border border-gray-300 p-2 rounded"></div>
+                        <div><label class="block text-gray-700 mb-1">سلفان مط وجهين</label><input type="number" step="0.01" min="0" value="${lamination.matteDouble != null ? lamination.matteDouble : 0}" onchange="PricingAdmin.saveDigitalPrintingPrice('${configDocId}', '${pricingMode}', 'lamination', null, 'matteDouble', this.value)" class="w-full border border-gray-300 p-2 rounded"></div>
+                        <div><label class="block text-gray-700 mb-1">سلفان لامع وجه واحد</label><input type="number" step="0.01" min="0" value="${lamination.glossySingle != null ? lamination.glossySingle : 0}" onchange="PricingAdmin.saveDigitalPrintingPrice('${configDocId}', '${pricingMode}', 'lamination', null, 'glossySingle', this.value)" class="w-full border border-gray-300 p-2 rounded"></div>
+                        <div><label class="block text-gray-700 mb-1">سلفان لامع وجهين</label><input type="number" step="0.01" min="0" value="${lamination.glossyDouble != null ? lamination.glossyDouble : 0}" onchange="PricingAdmin.saveDigitalPrintingPrice('${configDocId}', '${pricingMode}', 'lamination', null, 'glossyDouble', this.value)" class="w-full border border-gray-300 p-2 rounded"></div>
                     </div>
                 </div>
-                <div class="bg-white p-6 rounded-xl border border-gray-200">
-                    <h4 class="font-bold text-gray-800 mb-4">إضافات (اختياري)</h4>
+
+                <div class="bg-white p-6 rounded-2xl border border-gray-200">
+                    <h4 class="font-bold text-gray-800 mb-4">إضافات</h4>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
                         <div><label class="block text-gray-700 mb-1">لون اسبشيال (بالفرخ)</label><input type="number" step="0.01" min="0" value="${extras.specialColorPerColor}" onchange="PricingAdmin.saveDigitalPrintingPrice('${configDocId}', '${pricingMode}', 'extras', null, 'specialColorPerColor', this.value)" class="w-full border border-gray-300 p-2 rounded"></div>
                         <div><label class="block text-gray-700 mb-1">تشريح استيكر (بالفرخ)</label><input type="number" step="0.01" min="0" value="${extras.stickerCuttingPerSheet}" onchange="PricingAdmin.saveDigitalPrintingPrice('${configDocId}', '${pricingMode}', 'extras', null, 'stickerCuttingPerSheet', this.value)" class="w-full border border-gray-300 p-2 rounded"></div>
@@ -7033,7 +7111,7 @@ const PricingAdmin = {
                         <div><label class="block text-gray-700 mb-1">تخريم بالـ 1000 قطعة</label><input type="number" step="0.01" min="0" value="${extras.perforationPer1000}" onchange="PricingAdmin.saveDigitalPrintingPrice('${configDocId}', '${pricingMode}', 'extras', null, 'perforationPer1000', this.value)" class="w-full border border-gray-300 p-2 rounded"></div>
                         <div><label class="block text-gray-700 mb-1">ركنة بالـ 1000 قطعة</label><input type="number" step="0.01" min="0" value="${extras.cornerRoundingPer1000}" onchange="PricingAdmin.saveDigitalPrintingPrice('${configDocId}', '${pricingMode}', 'extras', null, 'cornerRoundingPer1000', this.value)" class="w-full border border-gray-300 p-2 rounded"></div>
                         <div><label class="block text-gray-700 mb-1">جيب + لزق (للفولدر) بالقطعة</label><input type="number" step="0.01" min="0" value="${extras.folderPocketPerPiece}" onchange="PricingAdmin.saveDigitalPrintingPrice('${configDocId}', '${pricingMode}', 'extras', null, 'folderPocketPerPiece', this.value)" class="w-full border border-gray-300 p-2 rounded"></div>
-                        <div><label class="block text-gray-700 mb-1">تقفيل شنطة بالشنطة الواحدة</label><input type="number" step="0.01" min="0" value="${extras.bagAssemblyPerBag}" onchange="PricingAdmin.saveDigitalPrintingPrice('${configDocId}', '${pricingMode}', 'extras', null, 'bagAssemblyPerBag', this.value)" class="w-full border border-gray-300 p-2 rounded"></div>
+                        <div><label class="block text-gray-700 mb-1">تقفيل شنطة بالشنطة</label><input type="number" step="0.01" min="0" value="${extras.bagAssemblyPerBag}" onchange="PricingAdmin.saveDigitalPrintingPrice('${configDocId}', '${pricingMode}', 'extras', null, 'bagAssemblyPerBag', this.value)" class="w-full border border-gray-300 p-2 rounded"></div>
                         <div><label class="block text-gray-700 mb-1">قص الورق بالـ 1000 قطعة</label><input type="number" step="0.01" min="0" value="${extras.paperCuttingPer1000}" onchange="PricingAdmin.saveDigitalPrintingPrice('${configDocId}', '${pricingMode}', 'extras', null, 'paperCuttingPer1000', this.value)" class="w-full border border-gray-300 p-2 rounded"></div>
                     </div>
                 </div>
@@ -7041,8 +7119,86 @@ const PricingAdmin = {
         `;
     },
 
+    async seedDigitalCostPrices() {
+        if (typeof DigitalPrintingPricing === 'undefined') return;
+        const { isConfirmed } = await Swal.fire({
+            title: 'تحميل أسعار التكلفة؟',
+            html: '<p class="text-sm text-gray-600">هيتحمّل جدول أسعار الصياد كأسعار تكلفة افتراضية (ممكن تعدّلها بعد كده).</p>',
+            icon: 'question',
+            showCancelButton: true,
+            cancelButtonText: 'إلغاء',
+            confirmButtonText: 'تحميل',
+            confirmButtonColor: '#e11d48'
+        });
+        if (!isConfirmed) return;
+        try {
+            const collName = DigitalPrintingPricing.COST_COLLECTION;
+            const docId = DigitalPrintingPricing.CONFIG_DOC_ID;
+            const docRef = this._getColl(collName).doc(docId);
+            const existing = await docRef.get();
+            const data = existing.exists ? existing.data() : {};
+            data.paperPrices = DigitalPrintingPricing.getDefaultCostPaperPrices();
+            data.updatedAt = new Date().toISOString();
+            data.sourceNote = DigitalPrintingPricing.COST_NOTE || '';
+            await docRef.set(data, { merge: true });
+            Swal.fire({ icon: 'success', title: 'تم التحميل', timer: 1400, showConfirmButton: false });
+            await this.render('digital_printing', 'cost');
+        } catch (e) {
+            console.error(e);
+            Swal.fire('خطأ', 'فشل حفظ أسعار التكلفة', 'error');
+        }
+    },
+
+    async copyDigitalCostToSell() {
+        if (typeof DigitalPrintingPricing === 'undefined') return;
+        const { value: markup } = await Swal.fire({
+            title: 'نسخ التكلفة إلى البيع',
+            html: '<p class="text-sm text-gray-600 mb-3">هينسخ أسعار التكلفة كأساس لأسعار البيع. تقدر تضيف نسبة زيادة %.</p>',
+            input: 'number',
+            inputValue: 0,
+            inputAttributes: { min: 0, step: '1' },
+            inputLabel: 'نسبة الزيادة % (0 = نفس التكلفة)',
+            showCancelButton: true,
+            cancelButtonText: 'إلغاء',
+            confirmButtonText: 'نسخ',
+            confirmButtonColor: '#059669'
+        });
+        if (markup === undefined) return;
+        try {
+            const costDoc = await this._getColl(DigitalPrintingPricing.COST_COLLECTION).doc(DigitalPrintingPricing.CONFIG_DOC_ID).get();
+            let paperPrices = {};
+            if (costDoc.exists && costDoc.data().paperPrices) {
+                paperPrices = costDoc.data().paperPrices;
+            } else {
+                paperPrices = DigitalPrintingPricing.getDefaultCostPaperPrices();
+            }
+            const pct = (parseFloat(markup) || 0) / 100;
+            const sellPrices = {};
+            Object.keys(paperPrices).forEach(id => {
+                const p = paperPrices[id] || {};
+                const mul = (n) => n != null && n !== '' ? Math.round((Number(n) * (1 + pct)) * 100) / 100 : 0;
+                sellPrices[id] = {
+                    priceSingle: mul(p.priceSingle),
+                    priceDouble: mul(p.priceDouble),
+                    cellophaneSingle: mul(p.cellophaneSingle),
+                    cellophaneDouble: mul(p.cellophaneDouble)
+                };
+            });
+            const sellRef = this._getColl(DigitalPrintingPricing.SELL_COLLECTION).doc(DigitalPrintingPricing.CONFIG_DOC_ID);
+            const sellExisting = await sellRef.get();
+            const data = sellExisting.exists ? sellExisting.data() : {};
+            data.paperPrices = sellPrices;
+            data.updatedAt = new Date().toISOString();
+            await sellRef.set(data, { merge: true });
+            Swal.fire({ icon: 'success', title: 'تم النسخ', timer: 1400, showConfirmButton: false });
+            await this.render('digital_printing', 'selling');
+        } catch (e) {
+            console.error(e);
+            Swal.fire('خطأ', 'فشل نسخ الأسعار', 'error');
+        }
+    },
+
     async saveDigitalPrintingPrice(docId, pricingMode, section, paperTypeId, field, value) {
-        const db = this._getDb();
         const isSell = pricingMode === 'selling';
         const collName = (typeof DigitalPrintingPricing !== 'undefined')
             ? (isSell ? DigitalPrintingPricing.SELL_COLLECTION : DigitalPrintingPricing.COST_COLLECTION)
@@ -7067,7 +7223,13 @@ const PricingAdmin = {
             }
             data.updatedAt = new Date().toISOString();
             await docRef.set(data);
-            Swal.fire('تم', 'تم حفظ السعر بنجاح', 'success');
+            // حفظ صامت بدون popup مزعج لكل خلية
+            const toast = document.createElement('div');
+            toast.textContent = 'تم الحفظ';
+            toast.style.cssText = 'position:fixed;bottom:20px;left:20px;background:#059669;color:#fff;padding:8px 14px;border-radius:10px;font-size:12px;font-weight:700;z-index:99999;opacity:0;transition:opacity .2s';
+            document.body.appendChild(toast);
+            requestAnimationFrame(() => { toast.style.opacity = '1'; });
+            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 200); }, 900);
         } catch (error) {
             console.error('Error saving digital printing price:', error);
             Swal.fire('خطأ', 'فشل حفظ السعر', 'error');

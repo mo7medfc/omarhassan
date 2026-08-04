@@ -1,0 +1,13 @@
+name = "oh-design-r2"
+main = "r2-design-upload.js"
+compatibility_date = "2024-06-01"
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "omarhassan-designs"
+
+[vars]
+# ليس رابط cloudflarestorage.com — فعّل Public access وخذ pub-xxx.r2.dev
+PUBLIC_BASE_URL = "https://pub-4121e0ce7798408682495eb09b381bab.r2.dev"
+
+# S3 API (للمرجع فقط): https://b6e54f9ed6bb546a99ced8cdecd5e05e.r2.cloudflarestorage.com/omarhassan-designs

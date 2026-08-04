@@ -11,21 +11,60 @@ const DigitalPrintingPricing = {
     MAX_SHEET_HEIGHT: 47,
 
     PAPER_TYPES: [
-        { id: 'plain_100', nameAr: 'ورق طبع 100 جرام', nameEn: 'Plain Paper 100 gsm', laminationAllowed: false, laminationSingleOnly: false },
-        { id: 'coated_150', nameAr: 'كوشيه 150 جرام', nameEn: 'Coated Paper 150 gsm', laminationAllowed: true, laminationSingleOnly: false },
-        { id: 'coated_200', nameAr: 'كوشيه 200 جرام', nameEn: 'Coated Paper 200 gsm', laminationAllowed: true, laminationSingleOnly: false },
-        { id: 'coated_250', nameAr: 'كوشيه 250 جرام', nameEn: 'Coated Paper 250 gsm', laminationAllowed: true, laminationSingleOnly: false },
-        { id: 'coated_300', nameAr: 'كوشيه 300 جرام', nameEn: 'Coated Paper 300 gsm', laminationAllowed: true, laminationSingleOnly: false },
-        { id: 'coated_350', nameAr: 'كوشيه 350 جرام', nameEn: 'Coated Paper 350 gsm', laminationAllowed: true, laminationSingleOnly: false },
-        { id: 'canvas', nameAr: 'ورق قماش', nameEn: 'Canvas Paper', laminationAllowed: false, laminationSingleOnly: false },
-        { id: 'fabriano', nameAr: 'ورق فبريانو', nameEn: 'Fabriano Paper', laminationAllowed: false, laminationSingleOnly: false },
-        { id: 'crystal', nameAr: 'ورق كريستال', nameEn: 'Crystal Paper', laminationAllowed: false, laminationSingleOnly: false },
-        { id: 'opaline', nameAr: 'ورق أوبالين', nameEn: 'Opaline Paper', laminationAllowed: false, laminationSingleOnly: false },
-        { id: 'bristol_350', nameAr: 'برستول كوشيه 350 جرام', nameEn: 'Bristol Coated 350 gsm', laminationAllowed: true, laminationSingleOnly: false },
-        { id: 'sticker_paper', nameAr: 'إستيكر ورق', nameEn: 'Sticker Paper', laminationAllowed: false, laminationSingleOnly: false },
-        { id: 'plastic_sticker', nameAr: 'استيكر بلاستيك', nameEn: 'Plastic Sticker', laminationAllowed: false, laminationSingleOnly: false },
-        { id: 'transparent_sticker', nameAr: 'إستيكر شفاف', nameEn: 'Transparent Sticker', laminationAllowed: false, laminationSingleOnly: false }
+        { id: 'plain_100', nameAr: 'ورق طبع 100 جرام', laminationAllowed: false, cellophaneSingle: false, cellophaneDouble: false },
+        { id: 'coated_150', nameAr: 'كوشيه 150 جرام', laminationAllowed: true, cellophaneSingle: true, cellophaneDouble: false },
+        { id: 'coated_200', nameAr: 'كوشيه 200 جرام', laminationAllowed: true, cellophaneSingle: true, cellophaneDouble: true },
+        { id: 'coated_250', nameAr: 'كوشيه 250 جرام', laminationAllowed: true, cellophaneSingle: true, cellophaneDouble: true },
+        { id: 'coated_300', nameAr: 'كوشيه 300 جرام', laminationAllowed: true, cellophaneSingle: true, cellophaneDouble: true },
+        { id: 'coated_350', nameAr: 'كوشيه 350 جرام', laminationAllowed: true, cellophaneSingle: true, cellophaneDouble: true },
+        { id: 'canvas', nameAr: 'ورق قماش', laminationAllowed: false, cellophaneSingle: false, cellophaneDouble: false },
+        { id: 'fabriano', nameAr: 'ورق فبريانو', laminationAllowed: false, cellophaneSingle: false, cellophaneDouble: false },
+        { id: 'crystal', nameAr: 'ورق كريستال', laminationAllowed: false, cellophaneSingle: false, cellophaneDouble: false },
+        { id: 'opaline', nameAr: 'ورق أوبالين', laminationAllowed: false, cellophaneSingle: false, cellophaneDouble: false },
+        { id: 'concorde_110', nameAr: 'كونكورد 110 جرام', laminationAllowed: false, cellophaneSingle: false, cellophaneDouble: false },
+        { id: 'bristol_350', nameAr: 'برستول كوشيه 350 جرام', laminationAllowed: true, cellophaneSingle: true, cellophaneDouble: false },
+        { id: 'pvc', nameAr: 'PVC', laminationAllowed: false, cellophaneSingle: false, cellophaneDouble: false },
+        { id: 'sticker_paper', nameAr: 'إستيكر ورق', laminationAllowed: true, cellophaneSingle: true, cellophaneDouble: false },
+        { id: 'plastic_sticker', nameAr: 'استيكر بلاستيك', laminationAllowed: true, cellophaneSingle: true, cellophaneDouble: false },
+        { id: 'transparent_sticker', nameAr: 'إستيكر شفاف', laminationAllowed: true, cellophaneSingle: true, cellophaneDouble: false }
     ],
+
+    /** بنود قسم الديجيتال */
+    PRODUCT_ITEMS: [
+        { id: 'business_cards', nameAr: 'كروت شخصية' },
+        { id: 'flyers', nameAr: 'فلايرات ومنشورات' },
+        { id: 'brochures', nameAr: 'بروشورات' },
+        { id: 'posters', nameAr: 'بوسترات' },
+        { id: 'certificates', nameAr: 'شهادات تقدير' },
+        { id: 'sticker_plastic', nameAr: 'استيكر بلاستيك' },
+        { id: 'sticker_paper', nameAr: 'استيكر ورق' },
+        { id: 'folders', nameAr: 'فولدرات' }
+    ],
+
+    /**
+     * أسعار التكلفة الافتراضية (ج.م / ورقة) — من قائمة الصياد
+     * الأسعار لأكثر من 10 ورقات
+     */
+    DEFAULT_COST_PAPER_PRICES: {
+        plain_100:            { priceSingle: 5.00,  priceDouble: 8.50,  cellophaneSingle: null, cellophaneDouble: null },
+        coated_150:           { priceSingle: 5.50,  priceDouble: 9.00,  cellophaneSingle: 6.50,  cellophaneDouble: null },
+        coated_200:           { priceSingle: 6.50,  priceDouble: 10.00, cellophaneSingle: 7.50,  cellophaneDouble: 12.00 },
+        coated_250:           { priceSingle: 7.00,  priceDouble: 11.00, cellophaneSingle: 8.00,  cellophaneDouble: 13.00 },
+        coated_300:           { priceSingle: 7.50,  priceDouble: 11.50, cellophaneSingle: 8.50,  cellophaneDouble: 13.50 },
+        coated_350:           { priceSingle: 9.00,  priceDouble: 13.00, cellophaneSingle: 10.00, cellophaneDouble: 15.00 },
+        canvas:               { priceSingle: 13.00, priceDouble: 17.00, cellophaneSingle: null, cellophaneDouble: null },
+        fabriano:             { priceSingle: 13.00, priceDouble: 17.00, cellophaneSingle: null, cellophaneDouble: null },
+        crystal:              { priceSingle: 15.00, priceDouble: 20.00, cellophaneSingle: null, cellophaneDouble: null },
+        opaline:              { priceSingle: 11.00, priceDouble: 15.00, cellophaneSingle: null, cellophaneDouble: null },
+        concorde_110:         { priceSingle: 8.00,  priceDouble: 11.00, cellophaneSingle: null, cellophaneDouble: null },
+        bristol_350:          { priceSingle: 10.00, priceDouble: null,  cellophaneSingle: 11.00, cellophaneDouble: null },
+        pvc:                  { priceSingle: 50.00, priceDouble: 60.00, cellophaneSingle: null, cellophaneDouble: null },
+        sticker_paper:        { priceSingle: 10.50, priceDouble: null,  cellophaneSingle: 11.50, cellophaneDouble: null },
+        plastic_sticker:      { priceSingle: 18.00, priceDouble: null,  cellophaneSingle: 19.00, cellophaneDouble: null },
+        transparent_sticker:  { priceSingle: 20.00, priceDouble: null,  cellophaneSingle: 21.00, cellophaneDouble: null }
+    },
+
+    COST_NOTE: 'الأسعار السابقة لأكثر من 10 ورقات',
 
     PRINTING_SIDES: [
         { id: 'single', nameAr: 'وجه واحد', nameEn: 'Single Side' },
@@ -72,11 +111,47 @@ const DigitalPrintingPricing = {
     canLaminationDouble(paperTypeId) {
         const p = this.getPaperTypeById(paperTypeId);
         if (!p || !p.laminationAllowed) return false;
-        return !p.laminationSingleOnly;
+        return !!p.cellophaneDouble;
     },
 
     getAllProducts() {
-        return this.PAPER_TYPES.map(p => ({ id: p.id, name: p.nameAr, nameEn: p.nameEn }));
+        return this.PAPER_TYPES.map(p => ({ id: p.id, name: p.nameAr }));
+    },
+
+    getProductItems() {
+        return this.PRODUCT_ITEMS || [];
+    },
+
+    getDefaultCostPaperPrices() {
+        const out = {};
+        Object.keys(this.DEFAULT_COST_PAPER_PRICES || {}).forEach(id => {
+            const src = this.DEFAULT_COST_PAPER_PRICES[id];
+            out[id] = {
+                priceSingle: src.priceSingle != null ? src.priceSingle : 0,
+                priceDouble: src.priceDouble != null ? src.priceDouble : 0,
+                cellophaneSingle: src.cellophaneSingle != null ? src.cellophaneSingle : 0,
+                cellophaneDouble: src.cellophaneDouble != null ? src.cellophaneDouble : 0
+            };
+        });
+        return out;
+    },
+
+    mergePaperPrices(stored) {
+        const base = {};
+        this.PAPER_TYPES.forEach(p => {
+            const s = (stored && stored[p.id]) || {};
+            const d = (this.DEFAULT_COST_PAPER_PRICES && this.DEFAULT_COST_PAPER_PRICES[p.id]) || {};
+            base[p.id] = {
+                priceSingle: s.priceSingle != null ? s.priceSingle : 0,
+                priceDouble: s.priceDouble != null ? s.priceDouble : 0,
+                cellophaneSingle: s.cellophaneSingle != null ? s.cellophaneSingle : 0,
+                cellophaneDouble: s.cellophaneDouble != null ? s.cellophaneDouble : 0,
+                _supportsCellophaneSingle: !!(p.cellophaneSingle || p.laminationAllowed),
+                _supportsCellophaneDouble: !!p.cellophaneDouble,
+                _supportsDouble: d.priceDouble != null || s.priceDouble != null
+            };
+        });
+        return base;
     },
 
     /**

@@ -24,9 +24,11 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=Cairo:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 
     <script>
@@ -755,8 +757,8 @@
                 <a class="sidebar-link hidden-section" id="linkShipping" data-section="shipping" onclick="showSection('shipping')">
                     <i class="fas fa-truck-fast"></i><span>الشحن</span>
                 </a>
-                <a class="sidebar-link hidden-section" id="linkCatalog" data-section="catalog" onclick="showSection('catalog')">
-                    <i class="fas fa-store"></i><span>إدارة الكتالوج</span>
+                <a class="sidebar-link hidden-section" id="linkDigitalPricing" data-section="digitalPricing" onclick="showSection('digitalPricing')">
+                    <i class="fas fa-tags"></i><span>التسعير والماكينات</span>
                 </a>
 
                 <div class="px-3 mt-5 mb-2 text-[10px] text-white/20 font-bold uppercase tracking-wider hidden-section" id="workerSectionLabel">التنفيذ</div>
@@ -961,11 +963,20 @@
                                     oninput="OrdersModule.handleSearch(this.value)"
                                     class="w-full pr-10 pl-4 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:border-accent focus:ring-2 focus:ring-accent/10 outline-none">
                             </div>
+                            <div class="flex items-center gap-2 shrink-0 w-full sm:w-auto" id="ordersShippingFilterWrap">
+                                <i class="fas fa-truck-fast text-indigo-500 text-sm shrink-0"></i>
+                                <button type="button" id="ordersShippingFilterBtn" onclick="OrdersModule.openShippingFilterPicker()"
+                                    class="flex-1 sm:flex-none flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:border-accent focus:ring-2 focus:ring-accent/10 outline-none min-h-[44px] min-w-[170px] w-full sm:max-w-[220px] touch-manipulation">
+                                    <span id="ordersShippingFilterLabel" class="truncate">كل شركات الشحن</span>
+                                    <i class="fas fa-chevron-down text-gray-400 text-xs shrink-0"></i>
+                                </button>
+                            </div>
                             <div class="flex gap-2 flex-wrap" id="statusFilters">
                                 <button onclick="OrdersModule.filterByStatus('all')" class="tab-btn active" data-filter="all">الكل</button>
                                 <button onclick="OrdersModule.filterByStatus('pending')" class="tab-btn" data-filter="pending">قيد الانتظار</button>
                                 <button onclick="OrdersModule.filterByStatus('in_progress')" class="tab-btn" data-filter="in_progress">قيد التنفيذ</button>
                                 <button onclick="OrdersModule.filterByStatus('ready')" class="tab-btn" data-filter="ready">جاهز</button>
+                                <button onclick="OrdersModule.filterByStatus('shipped')" class="tab-btn" data-filter="shipped">قيد الشحن</button>
                                 <button onclick="OrdersModule.filterByStatus('delivered')" class="tab-btn" data-filter="delivered">تم التسليم</button>
                                 <button onclick="OrdersModule.filterByStatus('cancelled')" class="tab-btn" data-filter="cancelled">ملغي</button>
                             </div>
@@ -1065,19 +1076,6 @@
                     </div>
                 </section>
                 
-                <!-- ========== CATALOG ADMIN ========== -->
-                <section id="sectionCatalog" class="hidden-section space-y-4 fade-in">
-                    <div class="bg-white rounded-2xl p-6 border border-gray-100">
-                        <h3 class="font-bold text-gray-900 flex items-center gap-2 mb-2">
-                            <i class="fas fa-store text-accent"></i> إدارة الكتالوج
-                        </h3>
-                        <p class="text-xs text-gray-400 mb-4">أضف منتجات جديدة، عدّل الأسعار والشرائح والمواصفات بدون تعديل الكود</p>
-                        <div id="catalogAdminContent">
-                            <div class="text-center text-gray-400 py-12 text-sm"><i class="fas fa-spinner fa-spin text-2xl mb-2 block"></i> جاري التحميل...</div>
-                        </div>
-                    </div>
-                </section>
-
                 <!-- ========== USERS ========== -->
                 <section id="sectionUsers" class="hidden-section space-y-4 fade-in">
                     <div class="bg-white rounded-2xl p-6 border border-gray-100">
@@ -1447,7 +1445,7 @@
                     </label>
                     <label class="flex items-center gap-3 p-3 rounded-xl border-2 border-gray-100 hover:border-indigo-300 cursor-pointer transition group" id="statusShippedOption" style="display:none">
                         <input type="radio" name="newStatus" value="shipped" class="accent-indigo-500">
-                        <span class="status-badge status-shipped"><i class="fas fa-truck-fast"></i> تم تسليم الشحن للمندوب</span>
+                        <span class="status-badge status-shipped"><i class="fas fa-truck-fast"></i> قيد الشحن</span>
                     </label>
                     <label class="flex items-center gap-3 p-3 rounded-xl border-2 border-gray-100 hover:border-emerald-300 cursor-pointer transition group">
                         <input type="radio" name="newStatus" value="delivered" class="accent-emerald-500">
@@ -1532,10 +1530,26 @@
                                 <span style="font-size:13px;font-weight:600;">لا توجد منتجات بعد</span>
                             </p>
                         </div>
+                        <!-- Discount -->
+                        <div id="orderDiscountSection" class="hidden-section" style="margin-bottom:12px;padding-top:12px;border-top:1.5px dashed #e2e8f0;">
+                            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:10px;">
+                                <input type="checkbox" id="discountCheck" onchange="toggleDiscountFields(); if(typeof OrderProducts!=='undefined') OrderProducts.updateOrderTotal();" style="width:16px;height:16px;accent-color:#C9A961;cursor:pointer;">
+                                <span style="font-size:12px;font-weight:700;color:#64748b;"><i class="fas fa-tag ml-1 text-red-400 text-[10px]"></i> عمل خصم</span>
+                            </label>
+                            <div id="discountFieldsRow" class="hidden-section">
+                                <label style="display:block;font-size:12px;font-weight:700;color:#94a3b8;margin-bottom:6px;">نسبة الخصم %</label>
+                                <input type="number" id="discountPercentage" min="0" max="100" step="0.1" value="0" placeholder="0"
+                                    oninput="if(typeof OrderProducts!=='undefined') OrderProducts.updateOrderTotal();"
+                                    style="width:100%;padding:10px 12px;border-radius:10px;border:1.5px solid #fecaca;background:#fef2f2;font-size:13px;outline:none;transition:all 0.2s;font-family:Tajawal,sans-serif;"
+                                    onfocus="this.style.borderColor='#ef4444';this.style.boxShadow='0 0 0 3px rgba(239,68,68,0.08)'"
+                                    onblur="this.style.borderColor='#fecaca';this.style.boxShadow='none'">
+                                <p id="discountAmountPreview" style="font-size:11px;color:#ef4444;margin-top:6px;font-weight:700;"></p>
+                            </div>
+                        </div>
                         <!-- Order Total Price Section (shown by OrderProducts) -->
                         <div id="orderTotalPrice" class="hidden-section" style="padding-top:12px;border-top:1.5px solid #e2e8f0;">
                             <div class="flex items-center justify-between">
-                                <span style="font-size:13px;font-weight:700;color:#64748b;">إجمالي المنتجات:</span>
+                                <span style="font-size:13px;font-weight:700;color:#64748b;">الإجمالي:</span>
                                 <span style="font-size:18px;font-weight:900;color:#C9A961;" id="orderTotalPriceValue">0.00</span>
                             </div>
                         </div>
@@ -1754,7 +1768,7 @@
                         <span class="block text-xs text-white/70 mt-1">نوت بوك، ليترهيد، ومنتجات الكتالوج</span>
                     </div>
                 </button>
-                <button onclick="closeModal('addProductChoiceModal'); openModal('customProductModal');" class="w-full bg-gradient-to-l from-emerald-500 to-emerald-700 text-white p-5 rounded-2xl font-bold hover:shadow-lg transition flex items-center gap-4">
+                <button onclick="closeModal('addProductChoiceModal'); openCustomProductModal();" class="w-full bg-gradient-to-l from-emerald-500 to-emerald-700 text-white p-5 rounded-2xl font-bold hover:shadow-lg transition flex items-center gap-4">
                     <div class="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
                         <i class="fas fa-pen-fancy text-2xl"></i>
                     </div>
@@ -1910,6 +1924,23 @@
                         <span id="customCalcTotal" class="font-black text-emerald-700 text-lg">0.00 ج.م</span>
                     </div>
                 </div>
+
+                <div class="border-t border-gray-100 pt-4">
+                    <label class="block text-sm font-bold text-gray-700 mb-2">
+                        <i class="fas fa-palette text-emerald-500 ml-1"></i> ملف التصميم
+                        <span class="text-gray-400 font-normal text-xs">(اختياري)</span>
+                    </label>
+                    <label class="cursor-pointer block border-2 border-dashed border-emerald-200 hover:border-emerald-400 rounded-xl p-4 text-center transition bg-emerald-50/30 hover:bg-emerald-50/50">
+                        <i class="fas fa-cloud-arrow-up text-emerald-600 text-xl mb-1 block"></i>
+                        <span class="text-xs font-bold text-gray-600">اضغط لرفع PDF أو صورة أو ملف تصميم</span>
+                        <span class="block text-[10px] text-gray-400 mt-1">PDF · PNG · JPG · PSD · AI · CDR · ZIP — حتى 50 ميجا</span>
+                        <input type="file" id="customProductDesignInput" class="hidden"
+                            accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.bmp,.svg,.psd,.ai,.cdr,.eps,.tif,.tiff,.zip,.rar,.doc,.docx,image/*,application/pdf"
+                            onchange="onCustomProductDesignSelect(this)">
+                    </label>
+                    <div id="customProductDesignPreview"></div>
+                </div>
+
                 <div class="flex gap-3 pt-2">
                     <button type="button" onclick="closeModal('customProductModal')" class="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-300 transition">إلغاء</button>
                     <button type="submit" class="flex-1 bg-emerald-600 text-white py-3 rounded-xl font-bold hover:bg-emerald-700 transition"><i class="fas fa-plus ml-2"></i> إضافة المنتج</button>
@@ -2028,12 +2059,12 @@
 
     <!-- ===== INVOICE MODAL ===== -->
     <div id="ohInvoiceModal" class="fixed inset-0 z-[110] hidden-section bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto relative">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto relative">
             <div class="bg-gradient-to-l from-primary to-[#3a3a3a] p-4 px-6 flex justify-between items-center sticky top-0 z-10 rounded-t-3xl">
                 <h3 class="text-white font-bold text-lg"><i class="fas fa-file-invoice text-accent ml-2"></i> الفاتورة</h3>
                 <div class="flex gap-2">
                     <button onclick="OHInvoice.downloadInvoice()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-sm font-bold transition">
-                        <i class="fas fa-download ml-1"></i> تحميل
+                        <i class="fas fa-file-pdf ml-1"></i> تحميل PDF
                     </button>
                     <button onclick="OHInvoice.printInvoice()" class="bg-accent hover:bg-accent/80 text-white px-3 py-2 rounded-lg text-sm font-bold transition">
                         <i class="fas fa-print ml-1"></i> طباعة
@@ -2041,7 +2072,7 @@
                     <button onclick="closeModal('ohInvoiceModal')" class="text-gray-400 hover:text-white transition"><i class="fas fa-times text-xl"></i></button>
                 </div>
             </div>
-            <div id="ohInvoiceContent" class="p-8"></div>
+            <div id="ohInvoiceContent" class="p-4 sm:p-6"></div>
         </div>
     </div>
 
@@ -2140,6 +2171,28 @@
         db.settings({ cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED, merge: true });
         window.db = db;
 
+        // Supabase Storage — تخزين سحابي مجاني لملفات التصميم (بديل Firebase Storage)
+        // أنشئ مشروع مجاني من https://supabase.com ثم ضع الرابط والمفتاح هنا
+        const supabaseConfig = {
+            url: 'https://mfiducotxeazahoqdifo.supabase.co',
+            publishableKey: 'sb_publishable_S--Y9iTlXa9D3T2LksIZUQ_Eblqyddn',
+            bucket: 'designs'
+        };
+        window.supabaseConfig = supabaseConfig;
+        const supabaseApiKey = supabaseConfig.publishableKey || supabaseConfig.anonKey || '';
+        if (supabaseConfig.url && supabaseApiKey && window.supabase) {
+            window.supabaseClient = window.supabase.createClient(supabaseConfig.url, supabaseApiKey);
+        }
+
+        // Cloudflare R2 — احتياطي عند امتلاء Supabase (1GB) → 10GB مجاني
+        // بعد إنشاء R2 bucket + Worker ضع workerUrl و publicBaseUrl هنا
+        const r2Config = {
+            workerUrl: 'https://oh-design-r2.mo7medfc.workers.dev',
+            publicBaseUrl: 'https://pub-4121e0ce7798408682495eb09b381bab.r2.dev',
+            bucketName: 'omarhassan-designs'
+        };
+        window.r2Config = r2Config;
+
         // ==========================================
         // Global State
         // ==========================================
@@ -2157,21 +2210,41 @@
         // ==========================================
         // Strip heavy blobs before localStorage / Firestore (prevents UI freeze)
         const OrderSanitizer = {
-            _MAX_DATA_URL: 150000,
+            _MAX_DATA_URL: 700000,
             productPrice(p) {
                 return p.sellingPrice != null ? p.sellingPrice : (p.price || 0);
             },
-            cleanProduct(p, forFirestore) {
+            cleanProduct(p, forFirestore, orderId) {
                 if (!p || typeof p !== 'object') return p;
                 const cp = { ...p };
                 if (cp.designFileData) {
                     if (!cp.designFileUrl) cp.designFileUrl = cp.designFileData;
                     delete cp.designFileData;
                 }
-                if (forFirestore && cp.designFileUrl && cp.designFileUrl.startsWith('data:') && cp.designFileUrl.length > this._MAX_DATA_URL) {
-                    delete cp.designFileUrl;
-                    cp.hasDesignFile = false;
-                    cp.designFileName = (cp.designFileName || '') + ' (كبير — استخدم رابط)';
+                const isCloudUrl = cp.designFileUrl && /^https?:\/\//i.test(cp.designFileUrl) && !cp.designFileUrl.startsWith('data:');
+                if (isCloudUrl) {
+                    cp.hasDesignFile = true;
+                    if (forFirestore) delete cp.designFileRef;
+                    if (!cp.designStorageProvider && cp.designFileUrl.includes('.r2.dev')) cp.designStorageProvider = 'r2';
+                    return cp;
+                }
+                if (cp.designFileUrl && cp.designFileUrl.startsWith('data:') && typeof DesignFileStore !== 'undefined' && cp.id) {
+                    const draftRef = DesignFileStore.makeDraftRef(cp.id);
+                    const orderRef = orderId ? DesignFileStore.makeRef(orderId, cp.id) : null;
+                    const targetRef = orderRef || draftRef;
+                    if (cp.designFileRef && cp.designFileRef.startsWith('draft_') && orderRef) {
+                        DesignFileStore.migrateDraftToOrder(cp.designFileRef, orderRef);
+                        cp.designFileRef = orderRef;
+                    } else if (DesignFileStore.save(targetRef, cp.designFileUrl, cp.designFileName || '', cp.designFileMime || '')) {
+                        cp.designFileRef = targetRef;
+                    }
+                    if (forFirestore) {
+                        delete cp.designFileUrl;
+                        cp.hasDesignFile = true;
+                    }
+                } else if (cp.designFileRef || cp.designStoragePath) {
+                    cp.hasDesignFile = true;
+                    if (forFirestore) delete cp.designFileRef;
                 }
                 return cp;
             },
@@ -2179,7 +2252,7 @@
                 if (!order || typeof order !== 'object') return order;
                 const o = { ...order };
                 if (Array.isArray(o.products)) {
-                    o.products = o.products.map(p => this.cleanProduct(p, forFirestore));
+                    o.products = o.products.map(p => this.cleanProduct(p, forFirestore, o.id));
                 }
                 if (forFirestore) {
                     if (o.transferScreenshot && o.transferScreenshot.length > 500000) delete o.transferScreenshot;
@@ -2568,6 +2641,7 @@
                 if (shipFields) shipFields.style.display = 'none';
                 if (shipDot) shipDot.style.right = '2px';
                 if (shipTrack) shipTrack.style.background = '#e2e8f0';
+                toggleDiscountFields();
                 if (typeof ShippingModule !== 'undefined') {
                     if (!ShippingModule._loaded) ShippingModule.init().then(() => ShippingModule.injectCarrierOptions()).catch(() => ShippingModule.injectCarrierOptions());
                     else ShippingModule.injectCarrierOptions();
@@ -2598,6 +2672,18 @@
             if (typeof OrderProducts !== 'undefined') OrderProducts.updateOrderTotal();
         }
 
+        function toggleDiscountFields() {
+            const checked = document.getElementById('discountCheck')?.checked;
+            const row = document.getElementById('discountFieldsRow');
+            if (row) row.classList.toggle('hidden-section', !checked);
+            if (!checked) {
+                const pct = document.getElementById('discountPercentage');
+                if (pct) pct.value = '0';
+                const preview = document.getElementById('discountAmountPreview');
+                if (preview) preview.textContent = '';
+            }
+        }
+
         function openQuickPrintModal() {
             document.getElementById('quickPrintForm').reset();
             document.getElementById('quickPrintCustomName')?.classList.add('hidden');
@@ -2618,9 +2704,86 @@
         // Add Product Choice & Custom Product
         // ==========================================
         let _customPricingMode = 'total'; // 'total', 'meter', 'cm', 'unit'
+        let _customProductDesign = { url: '', name: '', mime: '' };
 
         function openAddProductChoice() {
             openModal('addProductChoiceModal');
+        }
+
+        function openCustomProductModal() {
+            resetCustomProductDesign();
+            openModal('customProductModal');
+        }
+
+        function resetCustomProductDesign() {
+            _customProductDesign = { url: '', name: '', mime: '' };
+            const preview = document.getElementById('customProductDesignPreview');
+            if (preview) preview.innerHTML = '';
+            const input = document.getElementById('customProductDesignInput');
+            if (input) input.value = '';
+        }
+
+        function renderCustomProductDesignPreview() {
+            const preview = document.getElementById('customProductDesignPreview');
+            if (!preview) return;
+            if (!_customProductDesign.url) {
+                preview.innerHTML = '';
+                return;
+            }
+            const safeName = (_customProductDesign.name || '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
+            preview.innerHTML = `
+                <div class="flex items-center justify-between gap-2 mt-3 p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
+                    <span class="text-xs text-emerald-800 font-bold truncate"><i class="fas fa-file-circle-check ml-1"></i> ${safeName}</span>
+                    <div class="flex gap-1 shrink-0">
+                        <label class="text-[10px] text-blue-700 font-bold px-2 py-1 rounded-lg hover:bg-blue-50 cursor-pointer">
+                            <i class="fas fa-rotate ml-1"></i> استبدال
+                            <input type="file" class="hidden"
+                                accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.bmp,.svg,.psd,.ai,.cdr,.eps,.tif,.tiff,.zip,.rar,.doc,.docx,image/*,application/pdf"
+                                onchange="onCustomProductDesignSelect(this)">
+                        </label>
+                        <button type="button" onclick="resetCustomProductDesign()" class="text-[10px] text-red-600 font-bold px-2 py-1 rounded-lg hover:bg-red-50">حذف</button>
+                    </div>
+                </div>`;
+        }
+
+        function onCustomProductDesignSelect(input) {
+            const file = input?.files?.[0];
+            if (input) input.value = '';
+            if (!file) return;
+            const allowed = typeof OrderProducts !== 'undefined' ? OrderProducts.DESIGN_ALLOWED_EXT : ['pdf','png','jpg','jpeg','gif','webp','bmp','svg','psd','ai','cdr','eps','tif','tiff','zip','rar','doc','docx'];
+            const ext = (file.name || '').split('.').pop().toLowerCase();
+            if (!allowed.includes(ext)) {
+                Swal.fire('خطأ', 'نوع الملف غير مدعوم', 'error');
+                return;
+            }
+            const maxBytes = typeof OrderProducts !== 'undefined' ? OrderProducts.DESIGN_MAX_BYTES : (50 * 1024 * 1024);
+            if (file.size > maxBytes) {
+                Swal.fire('تنبيه', 'حجم الملف كبير (الحد 50 ميجا)', 'warning');
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                _customProductDesign = { url: e.target.result, name: file.name, mime: file.type || '' };
+                renderCustomProductDesignPreview();
+            };
+            reader.onerror = () => Swal.fire('خطأ', 'فشل قراءة الملف', 'error');
+            reader.readAsDataURL(file);
+        }
+
+        function attachCustomProductDesign(product) {
+            if (!_customProductDesign.url) return product;
+            const draftRef = typeof DesignFileStore !== 'undefined'
+                ? DesignFileStore.makeDraftRef(product.id)
+                : null;
+            if (draftRef && typeof DesignFileStore !== 'undefined') {
+                DesignFileStore.save(draftRef, _customProductDesign.url, _customProductDesign.name, _customProductDesign.mime);
+                product.designFileRef = draftRef;
+            }
+            product.designFileUrl = _customProductDesign.url;
+            product.designFileName = _customProductDesign.name;
+            product.designFileMime = _customProductDesign.mime;
+            product.hasDesignFile = true;
+            return product;
         }
 
         function calcCustomArea() {
@@ -2769,6 +2932,7 @@
                 pricingMode: _customPricingMode,
                 isCustom: true
             };
+            attachCustomProductDesign(product);
 
             if (typeof OrderProducts !== 'undefined') {
                 OrderProducts.addProduct(product);
@@ -2780,6 +2944,7 @@
 
             closeModal('customProductModal');
             document.getElementById('customProductForm').reset();
+            resetCustomProductDesign();
             document.getElementById('customAreaResult')?.classList.add('hidden');
             document.getElementById('customMeterCalcResult')?.classList.add('hidden-section');
             document.getElementById('customCmCalcResult')?.classList.add('hidden-section');
@@ -2798,6 +2963,256 @@
         // ==========================================
         const OHInvoice = {
             escapeHTML(str) { if (!str) return ''; const d = document.createElement('div'); d.textContent = str; return d.innerHTML; },
+            escapeAttr(str) { return String(str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;'); },
+
+            _isImageDesignUrl(url, mime, filename) {
+                if (!url) return false;
+                if (url.startsWith('data:image/')) return true;
+                const m = (mime || '').toLowerCase();
+                if (m.startsWith('image/')) return true;
+                const name = (filename || url).toLowerCase();
+                return /\.(jpe?g|png|gif|webp|bmp|svg)(\?|#|$)/i.test(name);
+            },
+
+            async _embedImageDataUrl(url) {
+                if (!url) return '';
+                if (url.startsWith('data:')) return url;
+                try {
+                    const resp = await fetch(url, { mode: 'cors' });
+                    if (!resp.ok) return url;
+                    const blob = await resp.blob();
+                    if (!blob.type.startsWith('image/')) return url;
+                    return await new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result || url);
+                        reader.onerror = () => resolve(url);
+                        reader.readAsDataURL(blob);
+                    });
+                } catch (e) {
+                    return url;
+                }
+            },
+
+            _buildDesignPreviewHtml(product, designUrl) {
+                if (!designUrl) return '';
+                const name = product.designFileName || 'تصميم';
+                if (this._isImageDesignUrl(designUrl, product.designFileMime, product.designFileName || designUrl)) {
+                    return `<tr><td colspan="5" style="border:1px solid #e5e7eb;padding:10px;background:#fafafa">
+                        <p style="font-size:10px;font-weight:700;color:#888;margin:0 0 8px"><i class="fas fa-palette" style="color:#C9A961"></i> صورة التصميم — ${this.escapeHTML(name)}</p>
+                        <div style="text-align:center">
+                            <img src="${this.escapeAttr(designUrl)}" alt="تصميم" style="max-width:100%;max-height:220px;border-radius:8px;border:1px solid #e5e7eb;object-fit:contain;background:#fff" />
+                        </div>
+                    </td></tr>`;
+                }
+                return `<tr><td colspan="5" style="border:1px solid #e5e7eb;padding:4px 10px;font-size:10px"><button type="button" data-design-product="${product._invoiceIdx}" class="oh-design-btn" style="background:#C9A961;color:white;border:none;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:10px"><i class="fas fa-palette"></i> ملف التصميم — ${this.escapeHTML(name)}</button></td></tr>`;
+            },
+
+            _statusColor(status) {
+                const sc = typeof statusClass === 'function' ? statusClass(status) : '';
+                if (sc.includes('delivered')) return '#059669';
+                if (sc.includes('pending')) return '#F59E0B';
+                if (sc.includes('in_design')) return '#7C3AED';
+                if (sc.includes('progress') || sc.includes('printing')) return '#3B82F6';
+                if (sc.includes('ready')) return '#10B981';
+                if (sc.includes('shipped')) return '#6366F1';
+                if (sc.includes('cancelled')) return '#EF4444';
+                return '#C9A961';
+            },
+
+            _invoiceStatusBadge(status) {
+                const sc = typeof statusClass === 'function' ? statusClass(status) : 'status-pending';
+                const label = typeof statusLabel === 'function' ? statusLabel(status) : status;
+                return `<span class="status-badge ${sc}" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700">${label}</span>`;
+            },
+
+            _shortDesignName(name) {
+                if (!name) return 'تصميم';
+                const base = String(name).replace(/^.*[\\/]/, '').trim();
+                if (base.length <= 28) return base;
+                return base.slice(0, 24) + '…';
+            },
+
+            _buildProductInvoiceData(product, productNames) {
+                const sp = product.sellingPrice != null ? product.sellingPrice : product.price;
+                const title = product.isCustom
+                    ? (product.productName || 'صنف مخصص')
+                    : (product.type === 'catalog'
+                        ? (product.productName || product.catalogName || 'منتج')
+                        : (productNames[product.type] || product.type));
+                const meta = [];
+
+                if (product.type === 'catalog') {
+                    if (product.catalogGroupName) meta.push({ k: 'القسم', v: product.catalogGroupName });
+                    if (product.catalogSubcategoryName) meta.push({ k: 'الفرعي', v: product.catalogSubcategoryName });
+                    if (product.catalogSpecs && typeof product.catalogSpecs === 'object') {
+                        Object.values(product.catalogSpecs).forEach(s => {
+                            if (s && s.display) meta.push({ k: s.label || '—', v: s.display });
+                        });
+                    }
+                    meta.push({ k: 'الكمية', v: String(product.quantity || 1) });
+                    if (product.unitPrice && !product.pendingPricing) {
+                        meta.push({ k: product.unitLabel || 'سعر الوحدة', v: `${Number(product.unitPrice).toFixed(2)} ج.م` });
+                    }
+                } else if (product.isCustom || product.type === 'custom') {
+                    if (product.size) meta.push({ k: 'المقاس', v: product.size });
+                    meta.push({ k: 'الكمية', v: String(product.quantity || 1) });
+                    if (product.unitPrice) meta.push({ k: 'سعر القطعة', v: `${Number(product.unitPrice).toFixed(2)} ج.م` });
+                } else if (product.type === 'Offset') {
+                    meta.push({ k: 'المقاس', v: `${product.width}×${product.height} سم` });
+                    meta.push({ k: 'الكمية', v: String(product.quantity || 1) });
+                    if (product.paperType?.name) meta.push({ k: 'الورق', v: product.paperType.name });
+                } else if (product.type === 'Outdoor' || product.type === 'Indoor') {
+                    meta.push({ k: 'المقاس', v: `${product.width || 0}×${product.length || product.height || 0} سم` });
+                    if (product.productName) meta.push({ k: 'النوع', v: product.productName });
+                } else if (product.type === 'BusinessCard') {
+                    meta.push({ k: 'المقاس', v: `${product.widthCm || 9}×${product.heightCm || 5} سم` });
+                    meta.push({ k: 'الكمية', v: String(product.quantity || 0) });
+                    if (product.paperTypeName) meta.push({ k: 'الورق', v: product.paperTypeName });
+                } else {
+                    if (product.size) meta.push({ k: 'المقاس', v: product.size });
+                    else if (product.productName && product.productName !== title) meta.push({ k: 'النوع', v: product.productName });
+                    meta.push({ k: 'الكمية', v: String(product.quantity || 1) });
+                    if (product.paperTypeName) meta.push({ k: 'الورق', v: product.paperTypeName });
+                }
+
+                return { title, meta, price: Number(sp || 0) };
+            },
+
+            _invoiceStyles() {
+                return `<style>
+.oh-invoice-root{font-family:'Cairo','Tajawal',sans-serif;background:#fff;padding:0;max-width:198mm;width:198mm;min-height:289mm;height:289mm;margin:auto;direction:rtl;color:#0F1B2D;box-sizing:border-box;border:2px solid #C9A961;box-shadow:0 8px 32px rgba(15,27,45,0.08);position:relative;display:flex;flex-direction:column}
+.oh-invoice-root::before{content:'';position:absolute;inset:5px;border:1px solid rgba(201,169,97,0.35);pointer-events:none;z-index:0}
+.oh-invoice-root>*{position:relative;z-index:1}
+.oh-invoice-root *{box-sizing:border-box}
+.oh-inv-top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 20px 16px;background:linear-gradient(135deg,#0F1B2D 0%,#1a3050 55%,#0F1B2D 100%);border-bottom:3px solid #C9A961;flex-shrink:0}
+.oh-inv-brand-block h1{font-size:28px;font-weight:900;color:#fff;margin:0;line-height:1.15;letter-spacing:0.5px}
+.oh-inv-brand-block p{color:#C9A961;font-size:12px;margin:5px 0 0;font-weight:700;letter-spacing:1.5px}
+.oh-inv-top-meta{text-align:center;flex:1}
+.oh-inv-badge{display:inline-block;background:linear-gradient(135deg,#C9A961,#e8c97a);color:#0F1B2D;font-size:12px;font-weight:900;padding:5px 18px;border-radius:20px;margin-bottom:8px;letter-spacing:1px}
+.oh-inv-meta-id{font-family:ui-monospace,monospace;font-size:12px;color:#C9A961;font-weight:800;word-break:break-all;line-height:1.3}
+.oh-inv-meta-date{font-size:12px;color:rgba(255,255,255,0.7);font-weight:600;margin-top:5px}
+.oh-inv-qr{text-align:center;flex-shrink:0}
+.oh-inv-qr img{width:72px;height:72px;display:block;margin:0 auto 3px;background:#fff;padding:4px;border-radius:8px}
+.oh-inv-qr span{font-size:8px;color:rgba(255,255,255,0.55)}
+.oh-inv-hero{display:grid;grid-template-columns:1fr auto;gap:16px;padding:20px 20px 18px;background:linear-gradient(180deg,#faf8f4 0%,#fff 100%);border-bottom:1px solid #e8dcc0;flex-shrink:0}
+.oh-inv-client-name{font-size:26px;font-weight:900;color:#0F1B2D;margin:0 0 8px;line-height:1.25}
+.oh-inv-sub{font-size:14px;color:#475569;margin:0 0 5px;line-height:1.5;font-weight:600}
+.oh-inv-phone{font-size:22px;color:#16a34a;font-weight:900;display:inline-flex;align-items:center;gap:8px;margin-bottom:10px}
+.oh-inv-phone i{font-size:24px}
+.oh-inv-money{display:flex;gap:10px;align-items:stretch}
+.oh-money-box{min-width:108px;padding:14px 16px;text-align:center;background:#fff;border-radius:12px;border:1px solid #e8dcc0;box-shadow:0 3px 12px rgba(201,169,97,0.15)}
+.oh-money-box .lbl{font-size:11px;color:#94a3b8;font-weight:800;margin-bottom:4px}
+.oh-money-box .val{font-size:32px;font-weight:900;color:#0F1B2D;line-height:1.05}
+.oh-money-box.total{border-color:#C9A961;background:linear-gradient(180deg,#fffdf7,#fff)}
+.oh-money-box.total .val{color:#C9A961;font-size:36px}
+.oh-money-box.remain .val{color:#ef4444;font-size:28px}
+.oh-money-box.remain.ok .val{color:#16a34a;font-size:22px}
+.oh-inv-ship{padding:12px 20px;background:linear-gradient(90deg,#eef2ff,#f5f3ff);border-bottom:1px solid #c7d2fe;font-size:14px;color:#4338ca;line-height:1.45;font-weight:700;flex-shrink:0}
+.oh-inv-ship strong{color:#312e81}
+.oh-inv-ship .ship-price{color:#0F1B2D;font-size:22px;font-weight:900;margin-right:8px}
+.oh-inv-main{flex:1;display:flex;flex-direction:column;min-height:0}
+.oh-inv-card{background:#fff;border-bottom:1px solid #f1f5f9;overflow:hidden;display:flex;flex-direction:column}
+.oh-inv-card.oh-inv-products{flex:1;min-height:0}
+.oh-inv-card-head{padding:10px 20px;background:linear-gradient(90deg,#f8fafc,#faf8f4);border-bottom:1px solid #e8dcc0;font-size:13px;font-weight:800;color:#64748b;display:flex;align-items:center;gap:8px;flex-shrink:0}
+.oh-inv-card-body{padding:0;flex-shrink:0}
+.oh-prod-item{padding:14px 20px;border-bottom:1px solid #f8fafc}
+.oh-prod-item:last-child{border-bottom:none}
+.oh-prod-row{display:flex;gap:14px;align-items:center}
+.oh-prod-idx{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#C9A961,#e8c97a);color:#0F1B2D;font-weight:900;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.oh-prod-info{flex:1;min-width:0}
+.oh-prod-title{font-weight:800;font-size:15px;color:#0F1B2D;margin:0 0 6px;line-height:1.35}
+.oh-prod-specs{display:flex;flex-wrap:wrap;gap:6px 12px}
+.oh-prod-spec{font-size:11px;line-height:1.35;background:#f8fafc;padding:4px 10px;border-radius:5px;border:1px solid #f1f5f9}
+.oh-prod-spec .k{color:#94a3b8}
+.oh-prod-spec .v{color:#475569;font-weight:800}
+.oh-prod-price{flex-shrink:0;text-align:center;min-width:90px;padding:10px 14px;background:linear-gradient(180deg,#fffdf7,#fff);border-radius:10px;border:1px solid #e8dcc0}
+.oh-prod-price .lbl{font-size:10px;color:#94a3b8;margin-bottom:2px;font-weight:800}
+.oh-prod-price .val{font-weight:900;font-size:24px;color:#C9A961}
+.oh-visual-section{padding:0;border-top:1px solid #f1f5f9;background:#fafafa;flex:1;display:flex;flex-direction:column;min-height:0}
+.oh-visual-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:14px 20px 18px;flex:1;align-content:stretch;min-height:0}
+.oh-visual-grid--single{grid-template-columns:1fr;max-width:55%;margin:0 auto}
+.oh-visual-box{background:#fff;border:1px solid #e8dcc0;border-radius:10px;padding:10px;display:flex;flex-direction:column;min-height:0;height:100%}
+.oh-visual-box .lbl{font-size:12px;font-weight:800;color:#64748b;text-align:center;margin:0 0 8px;padding-bottom:6px;border-bottom:1px solid #f8fafc;flex-shrink:0}
+.oh-visual-frame{flex:1;display:flex;align-items:center;justify-content:center;min-height:140px;padding:8px;background:#f8fafc;border-radius:8px;border:1px dashed #e2e8f0;overflow:hidden}
+.oh-visual-frame img{width:auto;height:auto;max-height:100%;max-width:100%;object-fit:contain;display:block;margin:0 auto}
+.oh-visual-stack{display:flex;flex-direction:column;gap:10px;height:100%}
+.oh-visual-stack .oh-visual-box{flex:1}
+.oh-visual-stack .oh-visual-frame{min-height:60px}
+.oh-inv-paybar{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-top:2px solid #C9A961;background:linear-gradient(180deg,#faf8f4,#fff);margin-top:auto;flex-shrink:0}
+.oh-pay-cell{padding:16px 14px;text-align:center;border-left:1px solid #e8dcc0}
+.oh-pay-cell:last-child{border-left:none}
+.oh-pay-cell .lbl{font-size:11px;color:#94a3b8;font-weight:800;margin-bottom:4px}
+.oh-pay-cell .val{font-size:24px;font-weight:900;color:#0F1B2D;line-height:1.15}
+.oh-pay-cell.total .val{color:#C9A961;font-size:28px}
+.oh-pay-cell.remain .val{color:#ef4444;font-size:26px}
+.oh-pay-cell.remain.ok .val{color:#16a34a;font-size:18px}
+.oh-collected{display:inline-flex;align-items:center;justify-content:center;gap:6px;direction:rtl;white-space:nowrap}
+.oh-collected .oh-ar{letter-spacing:0;unicode-bidi:embed;font-size:inherit;font-weight:900}
+.oh-collected i{font-size:0.85em;flex-shrink:0}
+.oh-inv-notes{padding:12px 20px;font-size:13px;color:#475569;line-height:1.55;border-top:1px solid #f1f5f9;background:#fffbeb;flex-shrink:0}
+.oh-inv-notes strong{color:#92400e;font-size:13px}
+.oh-inv-foot{text-align:center;padding:14px 20px;color:#94a3b8;font-size:11px;border-top:1px solid #e8dcc0;background:#faf8f4;flex-shrink:0}
+.oh-inv-foot strong{color:#C9A961}
+.oh-invoice-page{page-break-after:auto;break-after:auto}
+.oh-invoice-page+.oh-invoice-page{page-break-before:always;break-before:page}
+.oh-invoice-page--last{page-break-after:auto!important;break-after:auto!important}
+#ohInvoicePrint{page-break-inside:avoid;break-inside:avoid}
+@media print{
+.oh-invoice-root{background:#fff!important;padding:0!important;max-width:100%!important;width:100%!important;min-height:289mm!important;height:289mm!important;box-shadow:none!important;border:1px solid #C9A961!important}
+.oh-visual-frame{min-height:120px!important}
+.oh-visual-frame img{max-height:100%!important;max-width:100%!important}
+.oh-visual-box{page-break-inside:avoid}
+.oh-inv-card,.oh-visual-section,.oh-inv-hero,.oh-inv-paybar{page-break-inside:avoid}
+}
+@media(max-width:520px){.oh-invoice-root{min-height:auto;height:auto}.oh-inv-hero{grid-template-columns:1fr}.oh-inv-money{flex-wrap:wrap}.oh-inv-paybar{grid-template-columns:1fr 1fr}.oh-visual-grid{grid-template-columns:1fr}}
+</style>`;
+            },
+
+            _collectedHtml(size) {
+                const sz = size || '';
+                return `<span class="oh-collected" style="${sz ? 'font-size:' + sz : ''}"><span class="oh-ar">تم التحصيل</span><i class="fas fa-check"></i></span>`;
+            },
+
+            _visualBox(label, icon, iconColor, url) {
+                return `<div class="oh-visual-box">
+                    <p class="lbl"><i class="fas fa-${icon}" style="color:${iconColor}"></i> ${this.escapeHTML(label)}</p>
+                    <div class="oh-visual-frame"><img src="${this.escapeAttr(url)}" alt="${this.escapeAttr(label)}" /></div>
+                </div>`;
+            },
+
+            _buildOrderVisualsHTML(designUrl, order) {
+                const screens = [];
+                if (order.transferScreenshot) screens.push({ url: order.transferScreenshot, label: 'صورة الاسكرين — العربون' });
+                if (order.remainingScreenshot) screens.push({ url: order.remainingScreenshot, label: 'صورة الاسكرين — المتبقي' });
+                if (!designUrl && !screens.length) return '';
+
+                if (designUrl && screens.length === 0) {
+                    return `<div class="oh-visual-section"><div class="oh-visual-grid oh-visual-grid--single">${this._visualBox('صورة التصميم', 'palette', '#C9A961', designUrl)}</div></div>`;
+                }
+                if (!designUrl && screens.length === 1) {
+                    return `<div class="oh-visual-section"><div class="oh-visual-grid oh-visual-grid--single">${this._visualBox(screens[0].label, 'mobile-screen', '#6366f1', screens[0].url)}</div></div>`;
+                }
+                if (designUrl && screens.length === 1) {
+                    return `<div class="oh-visual-section"><div class="oh-visual-grid">
+                        ${this._visualBox('صورة التصميم', 'palette', '#C9A961', designUrl)}
+                        ${this._visualBox(screens[0].label.replace(' — العربون', '').replace(' — المتبقي', '') || 'صورة الاسكرين', 'mobile-screen', '#6366f1', screens[0].url)}
+                    </div></div>`;
+                }
+                if (designUrl && screens.length >= 2) {
+                    return `<div class="oh-visual-section"><div class="oh-visual-grid">
+                        ${this._visualBox('صورة التصميم', 'palette', '#C9A961', designUrl)}
+                        <div class="oh-visual-stack">
+                            ${screens.map(s => this._visualBox(s.label, 'mobile-screen', '#6366f1', s.url)).join('')}
+                        </div>
+                    </div></div>`;
+                }
+                if (screens.length >= 2) {
+                    return `<div class="oh-visual-section"><div class="oh-visual-grid">
+                        ${screens.map(s => this._visualBox(s.label, 'mobile-screen', '#6366f1', s.url)).join('')}
+                    </div></div>`;
+                }
+                return '';
+            },
 
             generateQR(text, size) {
                 try {
@@ -2809,19 +3224,17 @@
                 } catch(e) { return ''; }
             },
 
-            generate(orderId) {
+            async generate(orderId, options = {}) {
                 this._currentOrderId = orderId;
-                const order = (typeof App !== 'undefined' && App.orders || []).find(o => o.id == orderId);
-                if (!order) { Swal.fire('خطأ', 'الطلب غير موجود', 'error'); return; }
+                const order = (AppState.orders || []).find(o => o.id == orderId);
+                if (!order) {
+                    if (!options.silent) Swal.fire('خطأ', 'الطلب غير موجود', 'error');
+                    return false;
+                }
 
-                const statusTexts = {
-                    'pending': 'قيد الإدخال', 'design': 'في انتظار التصميم', 'design_in_progress': 'جاري التصميم',
-                    'design_done': 'انتهى التصميم', 'awaiting_production_approval': 'في انتظار موافقة التنفيذ',
-                    'printing': 'قيد التنفيذ', 'in_printing_house': 'في المطبعة', 'ready_at_branch': 'جاهز في الفرع',
-                    'awaiting_shipping_approval': 'في انتظار موافقة الشحن', 'assigned_to_shipping': 'معتمد للشحن',
-                    'shipped': 'مع شركة/مندوب الشحن', 'delivered': 'تم التسليم', 'collected': 'تم التحصيل',
-                    'fully_paid': 'تم الدفع بالكامل', 'in_branch': 'في الفرع', 'customer_received': 'تم تسليم العميل'
-                };
+                if (!options.silent) {
+                    Swal.fire({ title: 'جاري تحضير الفاتورة...', allowOutsideClick: false, showConfirmButton: false, didOpen: () => Swal.showLoading() });
+                }
 
                 const productNames = {
                     'Banner': 'بانر', 'Flex': 'فليكس', 'Vinyl': 'فينيل', 'Offset': 'أوفست',
@@ -2838,151 +3251,200 @@
                 };
 
                 const hasProducts = order.products && Array.isArray(order.products) && order.products.length > 0;
-                let productsRows = '';
                 let totalBasePrice = 0;
-                const isAdmin = typeof App !== 'undefined' && App.currentUser && App.currentUser.role === 'admin';
+                const products = hasProducts ? [...order.products] : [];
+                const designUrlMap = new Map();
 
                 if (hasProducts) {
-                    order.products.forEach((product, idx) => {
-                        let pName = product.isCustom ? (product.productName || 'صنف مخصص') : (product.type === 'catalog' ? (product.productName || product.catalogName) : (productNames[product.type] || product.type));
-                        let size = '-', quantity = '1', details = '';
+                    await Promise.all(products.map(async (product, idx) => {
+                        product._invoiceIdx = idx;
                         const sp = product.sellingPrice != null ? product.sellingPrice : product.price;
-
-                        if (product.type === 'catalog') {
-                            size = '-';
-                            quantity = (product.quantity || 1).toString();
-                            details = (product.catalogSpecsText || '') + (product.unitPrice ? ` | ${product.unitLabel || 'سعر الوحدة'}: ${Number(product.unitPrice).toFixed(2)}` : '');
-                        } else if (product.isCustom || product.type === 'custom') {
-                            size = product.size || '-';
-                            quantity = (product.quantity || 1).toString();
-                            details = product.unitPrice ? `سعر القطعة: ${Number(product.unitPrice).toFixed(2)} ج.م` : '';
-                        } else if (product.type === 'Offset') {
-                            size = `${product.width}×${product.height} سم`;
-                            quantity = (product.quantity || 1).toString();
-                            details = product.paperType?.name || 'أوفست';
-                        } else if (product.type === 'Outdoor' || product.type === 'Indoor') {
-                            size = `${product.width || 0}×${product.length || product.height || 0} سم`;
-                            quantity = '1';
-                            details = product.productName || pName;
-                        } else if (product.type === 'BusinessCard') {
-                            size = `${product.widthCm||9}×${product.heightCm||5} سم`;
-                            quantity = (product.quantity||0).toString();
-                            details = product.paperTypeName || '';
-                        } else {
-                            size = product.size || product.productName || '-';
-                            quantity = (product.quantity || 1).toString();
-                            details = product.paperTypeName || product.productName || '';
-                        }
-
-                        productsRows += `<tr>
-                            <td style="border:1px solid #e5e7eb;padding:8px 10px;font-weight:600;font-size:13px;color:#4D4D4D">${this.escapeHTML(pName)}</td>
-                            <td style="border:1px solid #e5e7eb;padding:8px 10px;font-size:12px;color:#666">${this.escapeHTML(size)}</td>
-                            <td style="border:1px solid #e5e7eb;padding:8px 10px;font-size:12px;text-align:center">${this.escapeHTML(quantity)}</td>
-                            <td style="border:1px solid #e5e7eb;padding:8px 10px;font-size:11px;color:#888">${this.escapeHTML(details)}</td>
-                            <td style="border:1px solid #e5e7eb;padding:8px 10px;font-weight:700;color:#C9A961;font-size:13px">${Number(sp||0).toFixed(2)} ج.م</td>
-                        </tr>`;
-                        if (product.hasDesignFile || product.designFileUrl) {
-                            productsRows += `<tr><td colspan="5" style="border:1px solid #e5e7eb;padding:4px 10px;font-size:10px"><button type="button" data-design-product="${idx}" class="oh-design-btn" style="background:#C9A961;color:white;border:none;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:10px"><i class="fas fa-palette"></i> ملف التصميم — ${this.escapeHTML(product.designFileName || 'تحميل')}</button></td></tr>`;
-                        }
                         totalBasePrice += (sp || 0);
-                    });
+                        if (typeof productHasDesignFile === 'function' ? productHasDesignFile(product) : (product.hasDesignFile || product.designFileUrl || product.designFileRef)) {
+                            let url = typeof resolveProductDesignUrlAsync === 'function'
+                                ? await resolveProductDesignUrlAsync(product)
+                                : (typeof resolveProductDesignUrl === 'function' ? resolveProductDesignUrl(product) : '');
+                            if (url && this._isImageDesignUrl(url, product.designFileMime, product.designFileName || url)) {
+                                url = await this._embedImageDataUrl(url);
+                            }
+                            designUrlMap.set(idx, url);
+                        }
+                    }));
                 }
 
                 const totalPrice = order.price || totalBasePrice;
-                const remaining = totalPrice - (order.deposit || 0);
-                const isCompleted = order.status === 'fully_paid' || order.status === 'customer_received';
+                const remaining = typeof getOrderRemaining === 'function' ? getOrderRemaining(order) : Math.max(0, totalPrice - (order.deposit || 0));
+                const collected = typeof isOrderCollected === 'function' ? isOrderCollected(order) : remaining <= 0;
                 const orderDate = new Date(order.createdAt).toLocaleDateString('ar-EG', { year:'numeric', month:'long', day:'numeric' });
-                const orderShort = order.id.toString().slice(-6);
+                const statusColor = this._statusColor(order.status);
+                const productsSummary = typeof getProductsSummary === 'function' ? getProductsSummary(order) : '';
+                const carrierName = order.shippingCarrierName || order.shippingCarrierId || '';
+                const createdByName = (typeof UserSvc !== 'undefined' ? (UserSvc.getByUsername(order.createdBy) || {}).name : '') || order.createdBy || '';
 
                 const qrUrl = `${window.location.origin}/order-status.html?id=${order.id}`;
                 const qrImg = this.generateQR(qrUrl, 3);
 
-                const html = `<div id="ohInvoicePrint" style="font-family:'Cairo','Tajawal',sans-serif;background:#fff;padding:30px;max-width:700px;margin:auto;direction:rtl">
-                    <!-- Header -->
-                    <div style="text-align:center;border-bottom:3px solid #C9A961;padding-bottom:16px;margin-bottom:20px">
-                        <h1 style="font-size:32px;font-weight:900;color:#0F1B2D;margin:0;letter-spacing:2px">Omar Hassan</h1>
-                        <p style="color:#C9A961;font-size:13px;margin:4px 0 0">PRINTING & DESIGN</p>
+                let productCards = '';
+                let primaryDesignUrl = null;
+                if (hasProducts) {
+                    products.forEach((product, idx) => {
+                        const { title, meta, price } = this._buildProductInvoiceData(product, productNames);
+                        const metaHtml = meta.length
+                            ? `<div class="oh-prod-specs">${meta.map(m => `<div class="oh-prod-spec"><span class="k">${this.escapeHTML(m.k)}:</span><span class="v">${this.escapeHTML(m.v)}</span></div>`).join('')}</div>`
+                            : '';
+                        const designUrl = designUrlMap.get(idx);
+                        if (designUrl && !primaryDesignUrl) primaryDesignUrl = designUrl;
+                        productCards += `<div class="oh-prod-item">
+                            <div class="oh-prod-row">
+                                <div class="oh-prod-idx">${idx + 1}</div>
+                                <div class="oh-prod-info">
+                                    <p class="oh-prod-title">${this.escapeHTML(title)}</p>
+                                    ${metaHtml}
+                                </div>
+                                <div class="oh-prod-price">
+                                    <div class="lbl">المبلغ</div>
+                                    <div class="val">${price.toFixed(2)} ج.م</div>
+                                </div>
+                            </div>
+                        </div>`;
+                    });
+                }
+                const orderVisuals = this._buildOrderVisualsHTML(primaryDesignUrl, order);
+
+                const remainClass = collected ? 'remain ok' : (remaining > 0 ? 'remain' : 'remain ok');
+                const remainVal = collected
+                    ? this._collectedHtml()
+                    : `${remaining.toFixed(2)} ج.م`;
+                const payMethodLabel = this.escapeHTML(typeof WalletMgr !== 'undefined' ? WalletMgr.getLabel(order.paymentMethod || 'cash') : (order.paymentMethod || 'نقدي'));
+                const remainWalletLabel = order.remainingWallet
+                    ? this.escapeHTML(typeof WalletMgr !== 'undefined' ? WalletMgr.getLabel(order.remainingWallet) : order.remainingWallet)
+                    : '';
+
+                const html = `<div id="ohInvoicePrint" class="oh-invoice-root">${this._invoiceStyles()}
+                    <div class="oh-inv-top">
+                        <div class="oh-inv-brand-block">
+                            <h1>Omar Hassan</h1>
+                            <p>PRINTING &amp; DESIGN</p>
+                        </div>
+                        <div class="oh-inv-top-meta">
+                            <span class="oh-inv-badge">فاتورة</span>
+                            <div class="oh-inv-meta-id">#${this.escapeHTML(String(order.id))}</div>
+                            <div class="oh-inv-meta-date">${this.escapeHTML(orderDate)}</div>
+                            <div style="margin-top:5px">${this._invoiceStatusBadge(order.status)}</div>
+                        </div>
+                        ${qrImg ? `<div class="oh-inv-qr"><img src="${qrImg}" alt="QR" /><span>امسح للتحقق</span></div>` : '<div></div>'}
                     </div>
 
-                    <!-- Invoice Title + QR -->
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+                    <div class="oh-inv-hero">
                         <div>
-                            <h2 style="font-size:22px;font-weight:800;color:#4D4D4D;margin:0">فاتورة / Invoice</h2>
-                            <p style="color:#888;font-size:12px;margin:2px 0 0">رقم الطلب: #${orderShort}</p>
+                            <p class="oh-inv-client-name">${this.escapeHTML(order.clientName || 'بدون اسم')}</p>
+                            ${order.phone ? `<div class="oh-inv-phone"><i class="fab fa-whatsapp"></i> ${this.escapeHTML(order.phone)}</div>` : ''}
+                            ${productsSummary ? `<p class="oh-inv-sub">${this.escapeHTML(productsSummary)}</p>` : ''}
+                            ${createdByName ? `<p class="oh-inv-sub"><i class="fas fa-user" style="color:#C9A961"></i> بواسطة: ${this.escapeHTML(createdByName)}</p>` : ''}
+                            ${order.isShipping && carrierName ? `<p class="oh-inv-sub"><i class="fas fa-truck-fast" style="color:#6366f1"></i> ${this.escapeHTML(carrierName)}</p>` : ''}
                         </div>
-                        ${qrImg ? `<div style="text-align:center"><img src="${qrImg}" style="width:70px;height:70px" /><p style="font-size:9px;color:#aaa;margin:2px 0 0">امسح للتحقق</p></div>` : ''}
+                        <div class="oh-inv-money">
+                            <div class="oh-money-box total">
+                                <div class="lbl">الإجمالي</div>
+                                <div class="val">${totalPrice.toFixed(2)}</div>
+                            </div>
+                            <div class="oh-money-box">
+                                <div class="lbl">العربون</div>
+                                <div class="val">${(order.deposit || 0).toFixed(2)}</div>
+                            </div>
+                            <div class="oh-money-box ${remainClass}">
+                                <div class="lbl">المتبقي</div>
+                                <div class="val">${remainVal}</div>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Client & Order Info -->
-                    <div style="display:flex;gap:12px;margin-bottom:16px">
-                        <div style="flex:1;background:#f8fafb;border:1px solid #e8eef1;border-radius:10px;padding:12px">
-                            <h3 style="font-size:12px;font-weight:700;color:#C9A961;border-bottom:1px solid #e0e0e0;padding-bottom:4px;margin:0 0 8px">معلومات العميل</h3>
-                            <p style="margin:3px 0;font-size:12px"><strong>الاسم:</strong> ${this.escapeHTML(order.clientName)}</p>
-                            <p style="margin:3px 0;font-size:12px"><strong>الهاتف:</strong> ${this.escapeHTML(order.phone)}</p>
-                            <p style="margin:3px 0;font-size:12px"><strong>التاريخ:</strong> ${this.escapeHTML(orderDate)}</p>
-                        </div>
-                        <div style="flex:1;background:#f8fafb;border:1px solid #e8eef1;border-radius:10px;padding:12px">
-                            <h3 style="font-size:12px;font-weight:700;color:#C9A961;border-bottom:1px solid #e0e0e0;padding-bottom:4px;margin:0 0 8px">حالة الطلب</h3>
-                            <p style="margin:3px 0;font-size:12px"><strong>الحالة:</strong> ${this.escapeHTML(statusTexts[order.status]||order.status)}</p>
-                            <p style="margin:3px 0;font-size:12px"><strong>الدفع:</strong> ${this.escapeHTML((typeof WalletMgr !== 'undefined' ? WalletMgr.getLabel(order.paymentMethod || 'cash') : (order.paymentMethod || 'نقدي')))}</p>
-                            <p style="margin:3px 0;font-size:12px"><strong>بواسطة:</strong> ${this.escapeHTML((UserSvc.getByUsername(order.createdBy)||{}).name || order.createdBy || '')}</p>
-                        </div>
-                    </div>
-
-                    <!-- Shipping Info (if applicable) -->
-                    ${order.isShipping ? `<div style="background:linear-gradient(135deg,#eef2ff,#e0e7ff);border:1px solid #c7d2fe;border-radius:10px;padding:12px;margin-bottom:16px">
-                        <h3 style="font-size:12px;font-weight:700;color:#4f46e5;border-bottom:1px solid #c7d2fe;padding-bottom:4px;margin:0 0 8px;display:flex;align-items:center;gap:6px"><i class="fas fa-truck-fast"></i> معلومات الشحن</h3>
-                        <div style="display:flex;gap:12px;flex-wrap:wrap">
-                            <p style="margin:3px 0;font-size:12px;flex:1;min-width:140px"><strong>شركة/مندوب:</strong> ${this.escapeHTML(order.shippingCarrierName || order.shippingCarrierId || '-')}</p>
-                            <p style="margin:3px 0;font-size:12px;flex:1;min-width:140px"><strong>تكلفة الشحن:</strong> <span style="color:#4f46e5;font-weight:700">${(order.shippingCost||0).toFixed(2)} ج.م</span></p>
-                            <p style="margin:3px 0;font-size:12px;flex:1;min-width:140px"><strong>محفظة الشحن:</strong> ${(typeof WalletMgr !== 'undefined' ? WalletMgr.getLabel(order.shippingWallet || 'cash') : (order.shippingWallet || 'نقدي'))}</p>
-                            ${order.shippingAddress ? `<p style="margin:3px 0;font-size:12px;width:100%"><strong>العنوان:</strong> ${this.escapeHTML(order.shippingAddress)}</p>` : ''}
-                        </div>
+                    ${order.isShipping ? `<div class="oh-inv-ship">
+                        <i class="fas fa-truck-fast" style="margin-left:5px"></i>
+                        <strong>الشحن:</strong> ${this.escapeHTML(carrierName || '-')}
+                        ${order.shippingAddress ? ` — ${this.escapeHTML(order.shippingAddress)}` : ''}
+                        <span class="ship-price">${(order.shippingCost || 0).toFixed(2)} ج.م</span>
                     </div>` : ''}
 
-                    <!-- Products Table -->
-                    <div style="margin-bottom:16px">
-                        <h3 style="font-size:14px;font-weight:700;color:#4D4D4D;border-bottom:2px solid #C9A961;padding-bottom:4px;margin:0 0 8px">تفاصيل المنتجات</h3>
-                        <table style="width:100%;border-collapse:collapse">
-                            <thead><tr style="background:#0F1B2D;color:white">
-                                <th style="border:1px solid #0F1B2D;padding:8px;text-align:right;font-size:11px">المنتج</th>
-                                <th style="border:1px solid #0F1B2D;padding:8px;text-align:right;font-size:11px">المقاس</th>
-                                <th style="border:1px solid #0F1B2D;padding:8px;text-align:center;font-size:11px">الكمية</th>
-                                <th style="border:1px solid #0F1B2D;padding:8px;text-align:right;font-size:11px">التفاصيل</th>
-                                <th style="border:1px solid #0F1B2D;padding:8px;text-align:right;font-size:11px">المبلغ</th>
-                            </tr></thead>
-                            <tbody>${productsRows}
-                            ${order.designFee > 0 ? `<tr><td colspan="4" style="border:1px solid #e5e7eb;padding:8px;text-align:right;font-weight:600;font-size:12px">تكلفة التصميم</td><td style="border:1px solid #e5e7eb;padding:8px;font-weight:700;font-size:12px">${order.designFee.toFixed(2)} ج.م</td></tr>` : ''}
-                            ${order.isShipping && order.shippingCost > 0 ? `<tr><td colspan="4" style="border:1px solid #e5e7eb;padding:8px;text-align:right;font-weight:600;font-size:12px">تكلفة الشحن</td><td style="border:1px solid #e5e7eb;padding:8px;font-weight:700;font-size:12px">${order.shippingCost.toFixed(2)} ج.م</td></tr>` : ''}
-                            </tbody>
-                        </table>
+                    <div class="oh-inv-main">
+                    ${productCards || orderVisuals ? `<div class="oh-inv-card oh-inv-products">
+                        <div class="oh-inv-card-head"><i class="fas fa-box" style="color:#C9A961"></i> المنتجات</div>
+                        ${productCards ? `<div class="oh-inv-card-body">${productCards}</div>` : ''}
+                        ${orderVisuals}
+                    </div>` : '<div class="oh-inv-main-spacer" style="flex:1"></div>'}
                     </div>
 
-                    <!-- Payment Summary -->
-                    <div style="background:#f0f9fc;border:2px solid #C9A961;border-radius:12px;padding:16px;margin-bottom:16px">
-                        <h3 style="font-size:14px;font-weight:700;color:#4D4D4D;margin:0 0 10px;border-bottom:1px solid #d0e8f0;padding-bottom:6px">ملخص الدفع</h3>
-                        <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-weight:600;font-size:13px">السعر النهائي:</span><span style="font-weight:800;font-size:16px;color:#C9A961">${totalPrice.toFixed(2)} ج.م</span></div>
-                        <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:12px">المقدم (العربون):</span><span style="font-weight:700;color:#22c55e;font-size:12px">${(order.deposit||0).toFixed(2)} ج.م</span></div>
-                        <div style="display:flex;justify-content:space-between;border-top:1px solid #d0e8f0;padding-top:8px;margin-top:4px"><span style="font-weight:700;font-size:14px">المتبقي:</span><span style="font-weight:800;font-size:14px;color:${isCompleted?'#22c55e':'#ef4444'}">${remaining.toFixed(2)} ج.م${isCompleted ? ' (تم الدفع)' : ''}</span></div>
+                    <div class="oh-inv-paybar">
+                        <div class="oh-pay-cell">
+                            <div class="lbl">العربون</div>
+                            <div class="val">${(order.deposit || 0).toFixed(2)}</div>
+                            <div class="lbl" style="margin-top:2px">${payMethodLabel}</div>
+                        </div>
+                        ${order.remainingWallet ? `<div class="oh-pay-cell">
+                            <div class="lbl">محفظة التحصيل</div>
+                            <div class="val" style="font-size:18px">${remainWalletLabel}</div>
+                        </div>` : `<div class="oh-pay-cell">
+                            <div class="lbl">طريقة الدفع</div>
+                            <div class="val" style="font-size:18px">${payMethodLabel}</div>
+                        </div>`}
+                        <div class="oh-pay-cell total">
+                            <div class="lbl">الإجمالي</div>
+                            <div class="val">${totalPrice.toFixed(2)}</div>
+                        </div>
+                        <div class="oh-pay-cell ${remainClass}">
+                            <div class="lbl">المتبقي</div>
+                            <div class="val">${remainVal}</div>
+                        </div>
                     </div>
 
-                    ${order.details ? `<div style="margin-bottom:14px"><h3 style="font-size:12px;font-weight:700;color:#4D4D4D;margin:0 0 4px">ملاحظات:</h3><p style="background:#f8f8f8;padding:8px;border-radius:8px;font-size:12px;color:#555;margin:0">${this.escapeHTML(order.details)}</p></div>` : ''}
+                    ${order.details ? `<div class="oh-inv-notes"><strong><i class="fas fa-sticky-note"></i> ملاحظات:</strong> ${this.escapeHTML(order.details)}</div>` : ''}
 
-                    <!-- Footer -->
-                    <div style="text-align:center;border-top:2px solid #C9A961;padding-top:12px;color:#aaa;font-size:11px">
-                        <p style="margin:0">شكراً لاختياركم <strong style="color:#0F1B2D">Omar Hassan</strong></p>
-                        <p style="margin:3px 0 0">Thank you for choosing Omar Hassan printing</p>
+                    <div class="oh-inv-foot">
+                        <p style="margin:0">شكراً لاختياركم <strong>Omar Hassan</strong> — Printing &amp; Design</p>
                     </div>
                 </div>`;
 
-                this._currentOrderProducts = order.products || [];
-                document.getElementById('ohInvoiceContent').innerHTML = html;
-                document.querySelectorAll('#ohInvoiceContent .oh-design-btn').forEach(btn => {
-                    const idx = parseInt(btn.getAttribute('data-design-product'), 10);
-                    const prod = this._currentOrderProducts[idx];
-                    if (prod) btn.onclick = () => openProductDesignFile(prod);
+                this._currentOrderProducts = products;
+                const target = options.host || document.getElementById('ohInvoiceContent');
+                if (target) target.innerHTML = html;
+                const scope = options.host || document.getElementById('ohInvoiceContent');
+                if (scope) {
+                    scope.querySelectorAll('.oh-design-btn').forEach(btn => {
+                        const idx = parseInt(btn.getAttribute('data-design-product'), 10);
+                        const prod = this._currentOrderProducts[idx];
+                        if (prod) btn.onclick = () => openProductDesignFile(prod);
+                    });
+                }
+                if (!options.silent) {
+                    Swal.close();
+                    openModal('ohInvoiceModal');
+                }
+                return true;
+            },
+
+            async _ensureHtml2Pdf() {
+                if (typeof html2pdf !== 'undefined') return;
+                await new Promise((resolve, reject) => {
+                    const s = document.createElement('script');
+                    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+                    s.onload = resolve;
+                    s.onerror = () => reject(new Error('فشل تحميل مكتبة PDF'));
+                    document.head.appendChild(s);
                 });
-                openModal('ohInvoiceModal');
+            },
+
+            async _exportElementToPdf(el, filename, isBatch) {
+                await this._ensureHtml2Pdf();
+                await html2pdf().set({
+                    margin: [4, 4, 4, 4],
+                    filename,
+                    image: { type: 'jpeg', quality: 0.96 },
+                    html2canvas: { scale: 2, useCORS: true, scrollY: 0, letterRendering: true, logging: false, allowTaint: true },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                    pagebreak: isBatch
+                        ? { before: '.oh-invoice-page + .oh-invoice-page', avoid: ['.oh-invoice-page--last'] }
+                        : { mode: ['avoid-all', 'css', 'legacy'] }
+                }).from(el).save();
             },
 
             printInvoice() {
@@ -2994,32 +3456,92 @@
                 pw.document.open();
                 pw.document.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>فاتورة Omar Hassan</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}html,body{margin:0;padding:0;font-family:'Cairo',sans-serif;background:#fff}
-.wrap{width:210mm;min-height:297mm;margin:0;padding:12mm;box-sizing:border-box;background:#fff}
-@media print{@page{size:A4;margin:0}body{width:210mm;height:297mm}.wrap{position:absolute;top:0;left:0;width:210mm!important;height:297mm!important;padding:12mm!important;overflow:hidden}}</style></head>
+.status-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700}
+.status-pending{background:#FEF3C7;color:#92400E}.status-in_design{background:#EDE9FE;color:#5B21B6}
+.status-in_printing_house,.status-printing,.status-in_progress{background:#DBEAFE;color:#1E40AF}
+.status-ready,.status-ready_at_branch{background:#D1FAE5;color:#065F46}.status-delivered{background:#ECFDF5;color:#047857}
+.status-shipped{background:#E0E7FF;color:#3730A3}.status-cancelled{background:#FEE2E2;color:#991B1B}
+.wrap{width:210mm;max-width:210mm;margin:0;padding:6mm;box-sizing:border-box;background:#fff}
+.oh-invoice-root{background:#fff!important;padding:0!important;max-width:100%!important}
+.oh-visual-box{min-height:65mm!important}
+.oh-visual-frame{min-height:58mm!important}
+.oh-visual-frame img{max-height:58mm!important;width:auto!important;max-width:100%!important;object-fit:contain!important}
+@media print{@page{size:A4 portrait;margin:6mm}body{background:#fff}.wrap{padding:0;width:100%;max-width:100%}}</style></head>
 <body><div class="wrap">${cloned.outerHTML}</div></body></html>`);
                 pw.document.close();
                 setTimeout(() => { pw.focus(); pw.print(); setTimeout(() => pw.close(), 500); }, 800);
             },
 
-            downloadInvoice() {
+            async downloadInvoice() {
                 const el = document.getElementById('ohInvoicePrint');
                 if (!el) return;
-                const cloned = el.cloneNode(true);
-                const htmlContent = `<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>فاتورة Omar Hassan</title>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
-<style>*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}html,body{margin:0;padding:0;font-family:'Cairo',sans-serif;background:#fff}
-.wrap{width:210mm;min-height:297mm;margin:0 auto;padding:12mm;box-sizing:border-box;background:#fff}</style></head>
-<body><div class="wrap">${cloned.outerHTML}</div></body></html>`;
-                const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'فاتورة-omarhassan-' + (this._currentOrderId || Date.now()) + '.html';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
+                try {
+                    Swal.fire({ title: 'جاري تحضير PDF...', allowOutsideClick: false, showConfirmButton: false, didOpen: () => Swal.showLoading() });
+                    const filename = 'فاتورة-omarhassan-' + (this._currentOrderId || Date.now()) + '.pdf';
+                    await this._exportElementToPdf(el, filename);
+                    Swal.close();
+                } catch (e) {
+                    console.error('Invoice PDF error:', e);
+                    Swal.fire('خطأ', 'فشل تحميل PDF. جرّب زر الطباعة أو حدّث الصفحة.', 'error');
+                }
+            },
+
+            async downloadInvoicesBatch(orderIds) {
+                const ids = (orderIds || []).filter(Boolean);
+                if (!ids.length) return;
+                let host = document.getElementById('ohInvoicePdfHost');
+                if (!host) {
+                    host = document.createElement('div');
+                    host.id = 'ohInvoicePdfHost';
+                    host.style.cssText = 'position:fixed;left:-12000px;top:0;width:210mm;z-index:-1;opacity:0;pointer-events:none';
+                    document.body.appendChild(host);
+                }
+                Swal.fire({ title: `جاري تحضير ${ids.length} فاتورة...`, allowOutsideClick: false, showConfirmButton: false, didOpen: () => Swal.showLoading() });
+                const combined = document.createElement('div');
+                combined.id = 'ohInvoiceBatchPrint';
+                combined.style.cssText = 'width:210mm;background:#fff';
+                let done = 0;
+                try {
+                    for (let i = 0; i < ids.length; i++) {
+                        const id = ids[i];
+                        Swal.update({ title: `جاري تحضير الفواتير... (${i + 1} / ${ids.length})` });
+                        host.innerHTML = '';
+                        const ok = await this.generate(id, { silent: true, host });
+                        const el = host.querySelector('#ohInvoicePrint');
+                        if (ok && el) {
+                            const page = document.createElement('div');
+                            page.className = 'oh-invoice-page';
+                            page.appendChild(el.cloneNode(true));
+                            combined.appendChild(page);
+                            done++;
+                        }
+                    }
+                    if (!done) {
+                        Swal.fire({ icon: 'warning', title: 'تعذر التحميل', text: 'لم يتم تحضير أي فاتورة', timer: 2000, showConfirmButton: false });
+                        return;
+                    }
+                    combined.querySelectorAll('.oh-invoice-page').forEach((page, idx, arr) => {
+                        if (idx === arr.length - 1) {
+                            page.classList.add('oh-invoice-page--last');
+                            page.style.pageBreakAfter = 'auto';
+                            page.style.breakAfter = 'auto';
+                        }
+                    });
+                    host.innerHTML = '';
+                    host.appendChild(combined);
+                    const filename = done === 1
+                        ? `فاتورة-omarhassan-${ids[0]}.pdf`
+                        : `فواتير-omarhassan-${done}-طلب.pdf`;
+                    await this._exportElementToPdf(combined, filename, true);
+                    Swal.fire({ icon: 'success', title: 'تم التحميل', text: `تم تحميل ${done} فاتورة في ملف PDF واحد`, timer: 2200, showConfirmButton: false });
+                } catch (e) {
+                    console.error('Batch PDF error:', e);
+                    Swal.fire('خطأ', 'فشل تحميل الفواتير PDF', 'error');
+                } finally {
+                    host.innerHTML = '';
+                }
             }
         };
 
@@ -3054,7 +3576,7 @@
             buildInvoiceMessage(order) {
                 if (!order) return '';
                 const pNames = this._getProductNames();
-                const remaining = (order.price || 0) - (order.deposit || 0);
+                const remaining = getOrderRemaining(order);
                 const date = order.createdAt ? new Date(order.createdAt).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
                 
                 let msg = `🧰 *فاتورة Omar Hassan*\n`;
@@ -3116,7 +3638,7 @@
                     'in_progress': 'قيد التنفيذ ⚙️',
                     'ready_at_branch': 'جاهز في الفرع ✅',
                     'ready': 'جاهز للتسليم 📦',
-                    'shipped': 'مع شركة/مندوب الشحن 🚚',
+                    'shipped': 'قيد الشحن 🚚',
                     'delivered': 'تم التسليم 🎉',
                     'cancelled': 'ملغي ❌'
                 };
@@ -3129,7 +3651,7 @@
                 msg += `📊 الحالة الجديدة: *${statusTexts[newStatus] || newStatus}*\n`;
 
                 if (newStatus === 'ready_at_branch' || newStatus === 'ready') {
-                    const remaining = (order.price || 0) - (order.deposit || 0);
+                    const remaining = getOrderRemaining(order);
                     msg += `\n🎉 طلبكم جاهز للاستلام!\n`;
                     if (remaining > 0) {
                         msg += `💰 المتبقي عند الاستلام: *${remaining.toFixed(2)} ج.م*\n`;
@@ -3397,6 +3919,9 @@
                 'ready': 'ready',
                 'shipped': 'shipped',
                 'delivered': 'delivered',
+                'customer_received': 'delivered',
+                'collected': 'delivered',
+                'fully_paid': 'delivered',
                 'cancelled': 'cancelled'
             };
             return map[s] || 'pending';
@@ -3411,8 +3936,11 @@
                 'in_progress': 'قيد التنفيذ',
                 'ready_at_branch': 'جاهز',
                 'ready': 'جاهز للتسليم',
-                'shipped': 'مع شركة/مندوب الشحن',
+                'shipped': 'قيد الشحن',
                 'delivered': 'تم التسليم',
+                'customer_received': 'تم تسليم العميل',
+                'collected': 'تم التحصيل',
+                'fully_paid': 'تم الدفع بالكامل',
                 'cancelled': 'ملغي'
             };
             return labels[s] || s;
@@ -3426,6 +3954,107 @@
         
         function formatCurrency(n) {
             return (n || 0).toLocaleString('ar-EG') + ' ج.م';
+        }
+
+        function orderPaymentComplete(o) {
+            if (!o) return false;
+            const total = Number(o.price) || 0;
+            if (total <= 0) return true;
+            if ((Number(o.deposit) || 0) >= total) return true;
+            if (o.collected === true || o.collected === 'true') return true;
+            if (['collected', 'fully_paid', 'customer_received'].includes(o.status)) return true;
+            return false;
+        }
+
+        function getOrderRemaining(o) {
+            if (!o) return 0;
+            const total = Number(o.price) || 0;
+            const deposit = Number(o.deposit) || 0;
+            const raw = Math.max(0, total - deposit);
+            if (raw <= 0) return 0;
+            if (orderPaymentComplete(o)) return 0;
+            return raw;
+        }
+
+        function isOrderCollected(o) {
+            return orderPaymentComplete(o);
+        }
+
+        function getCollectedRemainingAmount(o) {
+            if (!o || o.collected !== true) return 0;
+            if (o.collectedAmount != null && Number(o.collectedAmount) > 0) return Number(o.collectedAmount);
+            const total = Number(o.price) || 0;
+            const deposit = Number(o.deposit) || 0;
+            if (deposit >= total) return 0;
+            return Math.max(0, total - deposit);
+        }
+
+        function buildDeliveryUndoSnapshot(order) {
+            if (!order) return null;
+            return {
+                status: order.status || 'ready_at_branch',
+                deposit: order.deposit != null ? Number(order.deposit) : 0,
+                collected: order.collected === true || order.collected === 'true',
+                collectedAt: order.collectedAt || null,
+                collectedAmount: order.collectedAmount != null ? Number(order.collectedAmount) : null,
+                remainingWallet: order.remainingWallet || null,
+                remainingScreenshot: order.remainingScreenshot || null,
+                deliveredAt: order.deliveredAt || null,
+                shippingStatus: order.shippingStatus || null
+            };
+        }
+
+        function canUndoDelivery(order) {
+            if (!order) return false;
+            const st = typeof mapStatus === 'function' ? mapStatus(order.status) : order.status;
+            return st === 'delivered' || order.status === 'customer_received' || order.status === 'collected' || order.status === 'fully_paid';
+        }
+
+        function getUndoDeliveryPatches(order) {
+            const del = firebase.firestore.FieldValue.delete();
+            const remote = { editedAt: new Date().toISOString() };
+            const local = { editedAt: remote.editedAt };
+            const setVal = (key, value) => { remote[key] = value; local[key] = value; };
+            const clearVal = (key) => { remote[key] = del; local[key] = null; };
+
+            const snap = order.deliveryUndoSnapshot;
+            if (snap && typeof snap === 'object') {
+                setVal('status', snap.status || 'ready_at_branch');
+                setVal('deposit', snap.deposit != null ? Number(snap.deposit) : (Number(order.deposit) || 0));
+                setVal('collected', snap.collected === true);
+                if (snap.collectedAt) setVal('collectedAt', snap.collectedAt); else clearVal('collectedAt');
+                if (snap.collectedAmount != null) setVal('collectedAmount', Number(snap.collectedAmount)); else clearVal('collectedAmount');
+                if (snap.remainingWallet) setVal('remainingWallet', snap.remainingWallet); else clearVal('remainingWallet');
+                if (snap.remainingScreenshot) setVal('remainingScreenshot', snap.remainingScreenshot); else clearVal('remainingScreenshot');
+                if (snap.deliveredAt) setVal('deliveredAt', snap.deliveredAt); else clearVal('deliveredAt');
+                if (snap.shippingStatus) setVal('shippingStatus', snap.shippingStatus); else clearVal('shippingStatus');
+            } else {
+                const fallbackStatus = order.statusBeforeDelivery
+                    || (order.isShipping ? 'shipped' : 'ready_at_branch');
+                let restoredDeposit = Number(order.deposit) || 0;
+                if (order.collected === true && order.collectedAmount != null) {
+                    restoredDeposit = Math.max(0, (Number(order.price) || 0) - Number(order.collectedAmount));
+                }
+                setVal('status', fallbackStatus);
+                setVal('deposit', restoredDeposit);
+                setVal('collected', false);
+                clearVal('collectedAt');
+                clearVal('collectedAmount');
+                clearVal('remainingWallet');
+                clearVal('remainingScreenshot');
+                clearVal('deliveredAt');
+            }
+            clearVal('deliveryUndoSnapshot');
+            clearVal('statusBeforeDelivery');
+            return { remote, local };
+        }
+
+        function applyLocalOrderPatch(orderLike, localPatch) {
+            if (!orderLike || !localPatch) return;
+            Object.keys(localPatch).forEach(key => {
+                if (localPatch[key] === null) delete orderLike[key];
+                else orderLike[key] = localPatch[key];
+            });
         }
         
         function formatDate(d) {
@@ -4596,8 +5225,7 @@
                 'digitalPricing': 'التسعير',
                 'warnings': 'التحذيرات',
                 'suppliers': 'الموردين',
-                'shipping': 'الشحن',
-                'catalog': 'إدارة الكتالوج'
+                'shipping': 'الشحن'
             };
             document.getElementById('pageTitle').textContent = titles[name] || name;
             AppState.currentSection = name;
@@ -4620,9 +5248,6 @@
             if (name === 'warnings') WarningsModule.populateUserSelect();
             if (name === 'suppliers') SuppliersModule.render();
             if (name === 'shipping') ShippingModule.render();
-            if (name === 'catalog' && typeof ProductCatalog !== 'undefined') {
-                CatalogSvc.init().then(() => ProductCatalog.renderAdmin()).catch(e => console.error('Catalog render:', e));
-            }
             if (name === 'dashboard' && AppState.currentUser?.role === 'worker') WorkerModule.renderDashboard();
             
             // Close mobile sidebar
@@ -4910,6 +5535,7 @@
                     'جاري التصميم': orders.filter(o => mapStatus(o.status) === 'in_design').length,
                     'قيد التنفيذ': orders.filter(o => mapStatus(o.status) === 'in_progress').length,
                     'جاهز': orders.filter(o => mapStatus(o.status) === 'ready').length,
+                    'قيد الشحن': orders.filter(o => mapStatus(o.status) === 'shipped').length,
                     'تم التسليم': orders.filter(o => mapStatus(o.status) === 'delivered').length,
                     'ملغي': orders.filter(o => mapStatus(o.status) === 'cancelled').length
                 };
@@ -4920,7 +5546,7 @@
                         labels: Object.keys(counts),
                         datasets: [{
                             data: Object.values(counts),
-                            backgroundColor: ['#F59E0B', '#3B82F6', '#10B981', '#059669', '#EF4444'],
+                            backgroundColor: ['#F59E0B', '#8B5CF6', '#3B82F6', '#10B981', '#6366F1', '#059669', '#EF4444'],
                             borderWidth: 0
                         }]
                     },
@@ -4981,6 +5607,16 @@
             page: 1,
             pageSize: 15,
 
+            _statCard(filterKey, icon, iconBg, iconColor, valueHtml, label, active) {
+                return `<button type="button" onclick="MyOrdersModule.setFilter('${filterKey}')" title="عرض ${label}"
+                    class="bg-white rounded-2xl p-4 border text-center w-full transition cursor-pointer touch-manipulation ${active ? 'border-primary ring-2 ring-primary/25 shadow-md' : 'border-gray-100 hover:border-gray-200 hover:shadow-sm active:scale-[0.98]'}">
+                    <div class="w-10 h-10 rounded-xl ${iconBg} flex items-center justify-center mx-auto mb-2"><i class="fas fa-${icon} ${iconColor}"></i></div>
+                    <div class="text-2xl font-black leading-tight">${valueHtml}</div>
+                    <p class="text-xs text-gray-400 font-semibold mt-1">${label}</p>
+                    ${active ? '<p class="text-[10px] text-primary font-bold mt-1"><i class="fas fa-filter text-[8px]"></i> مُفعّل</p>' : ''}
+                </button>`;
+            },
+
             render() {
                 const container = document.getElementById('myordersContent');
                 if (!container) return;
@@ -4992,14 +5628,18 @@
                 const total = orders.length;
                 const pending = orders.filter(o => mapStatus(o.status) === 'pending').length;
                 const inDesign = orders.filter(o => mapStatus(o.status) === 'in_design').length;
+                const shipped = orders.filter(o => mapStatus(o.status) === 'shipped').length;
                 const delivered = orders.filter(o => mapStatus(o.status) === 'delivered').length;
                 const totalMoney = orders.reduce((s, o) => s + (o.price || 0), 0);
-                const totalDeposit = orders.reduce((s, o) => s + (o.deposit || 0), 0);
-                const totalRemaining = totalMoney - totalDeposit;
+                const ordersWithRemaining = orders.filter(o => getOrderRemaining(o) > 0);
+                const remainingCount = ordersWithRemaining.length;
+                const totalRemaining = ordersWithRemaining.reduce((s, o) => s + getOrderRemaining(o), 0);
 
                 // Filter
                 let filtered = [...orders];
-                if (this.filter !== 'all') {
+                if (this.filter === 'remaining') {
+                    filtered = filtered.filter(o => getOrderRemaining(o) > 0);
+                } else if (this.filter !== 'all') {
                     filtered = filtered.filter(o => mapStatus(o.status) === this.filter);
                 }
                 if (this.search) {
@@ -5025,40 +5665,25 @@
                     return `<button onclick="MyOrdersModule.setFilter('${val}')" class="px-3 py-1.5 rounded-xl text-xs font-bold transition ${active ? 'bg-' + color + '-500 text-white shadow-sm' : 'bg-' + color + '-50 text-' + color + '-600 hover:bg-' + color + '-100'}"><i class="fas fa-${icon} ml-1 text-[10px]"></i>${label}</button>`;
                 };
 
+                const activeFilter = this.filter;
+                const listTitle = activeFilter === 'remaining' ? 'طلبات بمتبقي' : activeFilter === 'all' ? 'طلباتي' : 'طلباتي — ' + (activeFilter === 'pending' ? 'انتظار' : activeFilter === 'in_design' ? 'تصميم' : activeFilter === 'shipped' ? 'قيد الشحن' : activeFilter === 'delivered' ? 'تم التسليم' : activeFilter);
+
                 container.innerHTML = `
-                    <!-- Stats -->
-                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
-                        <div class="bg-white rounded-2xl p-4 border border-gray-100 text-center">
-                            <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-2"><i class="fas fa-bag-shopping text-primary"></i></div>
-                            <p class="text-2xl font-black text-gray-900">${total}</p>
-                            <p class="text-xs text-gray-400 font-semibold mt-1">إجمالي طلباتي</p>
-                        </div>
-                        <div class="bg-white rounded-2xl p-4 border border-gray-100 text-center">
-                            <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center mx-auto mb-2"><i class="fas fa-clock text-amber-600"></i></div>
-                            <p class="text-2xl font-black text-amber-600">${pending}</p>
-                            <p class="text-xs text-gray-400 font-semibold mt-1">قيد الانتظار</p>
-                        </div>
-                        <div class="bg-white rounded-2xl p-4 border border-gray-100 text-center">
-                            <div class="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center mx-auto mb-2"><i class="fas fa-paint-brush text-purple-600"></i></div>
-                            <p class="text-2xl font-black text-purple-600">${inDesign}</p>
-                            <p class="text-xs text-gray-400 font-semibold mt-1">قيد التصميم</p>
-                        </div>
-                        <div class="bg-white rounded-2xl p-4 border border-gray-100 text-center">
-                            <div class="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center mx-auto mb-2"><i class="fas fa-check-double text-green-600"></i></div>
-                            <p class="text-2xl font-black text-green-600">${delivered}</p>
-                            <p class="text-xs text-gray-400 font-semibold mt-1">تم التسليم</p>
-                        </div>
-                        <div class="bg-white rounded-2xl p-4 border border-gray-100 text-center">
-                            <div class="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center mx-auto mb-2"><i class="fas fa-coins text-blue-600"></i></div>
-                            <p class="text-2xl font-black text-blue-600">${formatCurrency(totalMoney)}</p>
-                            <p class="text-xs text-gray-400 font-semibold mt-1">إجمالي المبالغ</p>
-                        </div>
-                        <div class="bg-white rounded-2xl p-4 border border-gray-100 text-center">
-                            <div class="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center mx-auto mb-2"><i class="fas fa-hand-holding-dollar text-red-500"></i></div>
-                            <p class="text-2xl font-black text-red-500">${formatCurrency(totalRemaining)}</p>
-                            <p class="text-xs text-gray-400 font-semibold mt-1">متبقي</p>
-                        </div>
+                    <!-- Stats (clickable filters) -->
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 mb-4">
+                        ${this._statCard('all', 'bag-shopping', 'bg-primary/10', 'text-primary', total, 'إجمالي طلباتي', activeFilter === 'all')}
+                        ${this._statCard('pending', 'clock', 'bg-amber-100', 'text-amber-600', pending, 'قيد الانتظار', activeFilter === 'pending')}
+                        ${this._statCard('in_design', 'paint-brush', 'bg-purple-100', 'text-purple-600', inDesign, 'قيد التصميم', activeFilter === 'in_design')}
+                        ${this._statCard('shipped', 'truck-fast', 'bg-indigo-100', 'text-indigo-600', shipped, 'قيد الشحن', activeFilter === 'shipped')}
+                        ${this._statCard('delivered', 'check-double', 'bg-green-100', 'text-green-600', delivered, 'تم التسليم', activeFilter === 'delivered')}
+                        ${this._statCard('all', 'coins', 'bg-blue-100', 'text-blue-600', `<span class="text-blue-600 text-lg">${formatCurrency(totalMoney)}</span>`, 'إجمالي المبالغ', false)}
+                        ${this._statCard('remaining', 'hand-holding-dollar', 'bg-red-100', 'text-red-500', `<span class="text-red-500 text-lg">${formatCurrency(totalRemaining)}</span><span class="block text-[10px] text-gray-400 font-bold mt-0.5">${remainingCount} طلب</span>`, 'متبقي', activeFilter === 'remaining')}
                     </div>
+
+                    ${activeFilter === 'remaining' ? `<div class="mb-3 p-3 bg-red-50 border border-red-100 rounded-xl text-center">
+                        <p class="text-sm font-bold text-red-600"><i class="fas fa-hand-holding-dollar ml-1"></i> ${remainingCount} طلب بمتبقي — المجموع: ${formatCurrency(totalRemaining)}</p>
+                        <p class="text-[10px] text-red-400 mt-1">اضغط على «الكل» لعرض كل الطلبات</p>
+                    </div>` : ''}
 
                     <!-- Filters + Search -->
                     <div class="bg-white rounded-2xl p-4 border border-gray-100 mb-4">
@@ -5072,7 +5697,9 @@
                             ${filterBtn('all', 'الكل (' + total + ')', 'layer-group', 'gray')}
                             ${filterBtn('pending', 'انتظار (' + pending + ')', 'clock', 'amber')}
                             ${filterBtn('in_design', 'تصميم (' + inDesign + ')', 'paint-brush', 'purple')}
+                            ${filterBtn('shipped', 'قيد الشحن (' + shipped + ')', 'truck-fast', 'indigo')}
                             ${filterBtn('delivered', 'تم التسليم (' + delivered + ')', 'check-double', 'green')}
+                            ${filterBtn('remaining', 'متبقي (' + remainingCount + ')', 'hand-holding-dollar', 'red')}
                         </div>
                     </div>
 
@@ -5080,7 +5707,7 @@
                     <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
                         <div class="p-4 border-b border-gray-100">
                             <h3 class="font-bold text-gray-900 flex items-center gap-2">
-                                <i class="fas fa-bag-shopping text-primary"></i> طلباتي
+                                <i class="fas fa-bag-shopping text-primary"></i> ${listTitle}
                                 <span class="bg-primary/10 text-primary text-xs font-bold px-2 py-0.5 rounded-full">${filtered.length}</span>
                             </h3>
                         </div>
@@ -5107,11 +5734,11 @@
             _renderCard(o) {
                 const st = statusLabel(o.status);
                 const sc = statusClass(o.status);
-                const remaining = (o.price || 0) - (o.deposit || 0);
+                const remaining = getOrderRemaining(o);
                 const dateStr = o.createdAt ? new Date(o.createdAt).toLocaleDateString('ar-EG', { day: 'numeric', month: 'short' }) : '-';
                 const isDel = ['delivered', 'ready_at_branch', 'ready'].includes(o.status);
-                const needsCollection = remaining > 0 && isDel && o.collected !== true;
-                const isCollected = remaining > 0 && isDel && (o.collected === true || (o.collected === undefined && isDel));
+                const needsCollection = getOrderRemaining(o) > 0 && isDel;
+                const collected = isOrderCollected(o);
                 return `
                 <div class="p-3 sm:p-4 hover:bg-gray-50/50 transition cursor-pointer" onclick="OrdersModule.showDetail(${o.id})">
                     <div class="flex items-center gap-3 mb-2">
@@ -5127,14 +5754,17 @@
                     <div class="flex items-center justify-between">
                         <div class="flex flex-wrap items-center gap-2 text-xs">
                             <span class="font-bold text-gray-700">${formatCurrency(o.price || 0)}</span>
-                            ${remaining > 0 && !isCollected ? `<span class="text-red-500 font-bold">متبقي: ${formatCurrency(remaining)}</span>` : remaining > 0 && isCollected ? `<span class="text-green-600 font-bold"><i class="fas fa-check text-[8px] ml-0.5"></i>محصّل</span>` : `<span class="text-green-600 font-bold"><i class="fas fa-check text-[8px] ml-0.5"></i>مدفوع</span>`}
+                            ${collected ? `<span class="text-green-600 font-bold"><i class="fas fa-check text-[8px] ml-0.5"></i>محصّل</span>` : remaining > 0 ? `<span class="text-red-500 font-bold">متبقي: ${formatCurrency(remaining)}</span>` : `<span class="text-green-600 font-bold"><i class="fas fa-check text-[8px] ml-0.5"></i>مدفوع</span>`}
                             <span class="text-gray-400 text-[10px]"><i class="fas fa-calendar ml-1"></i>${dateStr}</span>
                         </div>
                         <div class="flex gap-1 shrink-0" onclick="event.stopPropagation()">
                             ${needsCollection ? `<button onclick="OrdersModule.collectPayment(${o.id})" class="h-7 px-2 rounded-lg bg-green-50 hover:bg-green-100 flex items-center justify-center gap-1 transition" title="تحصيل المتبقي">
                                 <i class="fas fa-hand-holding-dollar text-green-500 text-[10px]"></i><span class="text-[10px] text-green-600 font-bold">تحصيل</span>
-                            </button>` : isCollected && o.collected === true ? `<button onclick="OrdersModule.changeRemainingWallet(${o.id})" class="h-7 px-2 rounded-lg bg-blue-50 hover:bg-blue-100 flex items-center justify-center gap-1 transition" title="تغيير محفظة التحصيل">
+                            </button>` : collected && o.collected === true ? `<button onclick="OrdersModule.changeRemainingWallet(${o.id})" class="h-7 px-2 rounded-lg bg-blue-50 hover:bg-blue-100 flex items-center justify-center gap-1 transition" title="تغيير محفظة التحصيل">
                                 <i class="fas fa-exchange-alt text-blue-500 text-[10px]"></i><span class="text-[10px] text-blue-600 font-bold">المحفظة</span>
+                            </button>` : ''}
+                            ${canUndoDelivery(o) ? `<button onclick="OrdersModule.undoDelivery(${o.id})" class="h-7 px-2 rounded-lg bg-amber-50 hover:bg-amber-100 flex items-center justify-center gap-1 transition" title="تراجع عن التسليم">
+                                <i class="fas fa-rotate-left text-amber-600 text-[10px]"></i><span class="text-[10px] text-amber-700 font-bold">تراجع</span>
                             </button>` : ''}
                             <button onclick="OrdersModule.openStatusModal(${o.id})" class="h-7 px-2 rounded-lg bg-blue-50 hover:bg-blue-100 flex items-center justify-center gap-1 transition" title="تغيير الحالة">
                                 <i class="fas fa-arrows-rotate text-blue-500 text-[10px]"></i><span class="text-[10px] text-blue-600 font-bold">الحالة</span>
@@ -5249,7 +5879,7 @@
             _renderCard(o, isAdm) {
                 const st = statusLabel(o.status);
                 const sc = statusClass(o.status);
-                const remaining = (o.price || 0) - (o.deposit || 0);
+                const remaining = getOrderRemaining(o);
                 const claimedDate = o.designReceivedAt ? new Date(o.designReceivedAt).toLocaleDateString('ar-EG', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '-';
                 const receiverName = o.designReceivedByName || o.designReceivedBy || '-';
                 return `
@@ -5274,6 +5904,9 @@
                         <button onclick="OrdersModule.openStatusModal(${o.id})" class="h-8 px-2.5 rounded-lg bg-blue-50 hover:bg-blue-100 flex items-center justify-center gap-1 transition" title="تغيير الحالة">
                             <i class="fas fa-arrows-rotate text-blue-500 text-xs"></i><span class="text-[10px] text-blue-600 font-bold">الحالة</span>
                         </button>
+                        ${canUndoDelivery(o) ? `<button onclick="OrdersModule.undoDelivery(${o.id})" class="h-8 px-2.5 rounded-lg bg-amber-50 hover:bg-amber-100 flex items-center justify-center gap-1 transition" title="تراجع عن التسليم">
+                            <i class="fas fa-rotate-left text-amber-600 text-xs"></i><span class="text-[10px] text-amber-700 font-bold">تراجع</span>
+                        </button>` : ''}
                         <button onclick="OrdersModule.showDetail(${o.id})" class="w-8 h-8 rounded-lg bg-gray-50 hover:bg-gray-100 flex items-center justify-center transition" title="التفاصيل">
                             <i class="fas fa-eye text-gray-500 text-xs"></i>
                         </button>
@@ -5288,6 +5921,7 @@
         const OrdersModule = {
             filter: 'all',
             search: '',
+            shippingCarrierFilter: '',
             page: 1,
             pageSize: 12,
             selectedOrders: new Set(),
@@ -5354,7 +5988,7 @@
                 const activeFiltered = filtered.filter(o => mapStatus(o.status) !== 'cancelled');
                 const totalPrice = activeFiltered.reduce((s, o) => s + (o.price || 0), 0);
                 const totalDeposit = activeFiltered.reduce((s, o) => s + (o.deposit || 0), 0);
-                const totalRemaining = activeFiltered.reduce((s, o) => s + Math.max(0, (o.price || 0) - (o.deposit || 0)), 0);
+                const totalRemaining = activeFiltered.reduce((s, o) => s + getOrderRemaining(o), 0);
                 const deliveredOrders = activeFiltered.filter(o => ['delivered','ready_at_branch','ready'].includes(o.status));
                 const deliveredTotal = deliveredOrders.reduce((s, o) => s + (o.price || 0), 0);
 
@@ -5377,7 +6011,7 @@
 
                 // Order rows
                 const orderRows = filtered.slice(0, 200).map(o => {
-                    const rem = Math.max(0, (o.price || 0) - (o.deposit || 0));
+                    const rem = getOrderRemaining(o);
                     const statusTexts = { new:'جديد', processing:'قيد التنفيذ', ready:'جاهز', delivered:'تم التسليم', cancelled:'ملغي', ready_at_branch:'جاهز بالفرع' };
                     const u = UserSvc.getByUsername(o.createdBy);
                     return `<tr>
@@ -5452,6 +6086,60 @@
                 });
                 this.render();
             },
+
+            filterByCarrier(carrierId) {
+                this.shippingCarrierFilter = carrierId || '';
+                this.page = 1;
+                this._updateShippingFilterLabel();
+                this.render();
+            },
+
+            _updateShippingFilterLabel() {
+                const label = document.getElementById('ordersShippingFilterLabel');
+                if (!label) return;
+                const cid = this.shippingCarrierFilter;
+                if (!cid) {
+                    label.textContent = 'كل شركات الشحن';
+                    return;
+                }
+                const name = typeof ShippingModule !== 'undefined' ? ShippingModule.getCarrierName(cid) : '';
+                label.textContent = name && name !== '-' ? name : 'شركة شحن';
+            },
+
+            async openShippingFilterPicker() {
+                if (typeof ShippingModule === 'undefined') return;
+                await ShippingModule.init();
+                const carriers = ShippingModule._carriers.filter(c => c.active !== false);
+                const current = this.shippingCarrierFilter || '';
+                const items = [{ id: '', name: 'كل شركات الشحن' }].concat(
+                    carriers.map(c => ({ id: String(c.id), name: c.name }))
+                );
+                const html = items.map(item => {
+                    const selected = String(item.id) === String(current);
+                    return `<button type="button" data-carrier-id="${item.id}" class="w-full text-right px-4 py-3 rounded-xl mb-2 text-sm font-bold transition border touch-manipulation ${selected ? 'bg-indigo-50 border-indigo-300 text-indigo-700' : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'}">${item.name}${selected ? ' <i class="fas fa-check text-indigo-500"></i>' : ''}</button>`;
+                }).join('');
+                await Swal.fire({
+                    title: 'شركة الشحن',
+                    html: `<div style="direction:rtl;text-align:right;max-height:60vh;overflow-y:auto">${html}</div>`,
+                    showConfirmButton: false,
+                    showCloseButton: true,
+                    didOpen: () => {
+                        const popup = Swal.getHtmlContainer();
+                        if (!popup) return;
+                        popup.querySelectorAll('[data-carrier-id]').forEach(btn => {
+                            btn.addEventListener('click', () => {
+                                Swal.close();
+                                OrdersModule.filterByCarrier(btn.getAttribute('data-carrier-id'));
+                            });
+                        });
+                    }
+                });
+            },
+
+            async _refreshShippingFilterOptions() {
+                if (typeof ShippingModule !== 'undefined') await ShippingModule.init();
+                this._updateShippingFilterLabel();
+            },
             
             getFiltered() {
                 let orders = [...(AppState.orders || [])];
@@ -5459,6 +6147,12 @@
                 // Status filter
                 if (this.filter !== 'all') {
                     orders = orders.filter(o => mapStatus(o.status) === this.filter);
+                }
+
+                // Shipping carrier filter
+                if (this.shippingCarrierFilter) {
+                    const cid = this.shippingCarrierFilter;
+                    orders = orders.filter(o => o.isShipping && String(o.shippingCarrierId) === String(cid));
                 }
                 
                 // Search
@@ -5488,7 +6182,8 @@
                 return orders;
             },
             
-            render() {
+            async render() {
+                await this._refreshShippingFilterOptions();
                 const filtered = this.getFiltered();
                 const total = filtered.length;
                 const totalPages = Math.ceil(total / this.pageSize) || 1;
@@ -5515,9 +6210,11 @@
                 const batchBar = document.getElementById('ordersBatchBar');
                 if (batchBar) {
                     if (isAdmin() && this.selectedOrders.size > 0) {
-                        batchBar.innerHTML = `<div class="bg-accent/10 border border-accent/20 rounded-xl p-3 flex items-center justify-between flex-wrap gap-2">
-                            <span class="text-sm font-bold text-accent"><i class="fas fa-check-double ml-1"></i> تم تحديد ${this.selectedOrders.size} طلب</span>
-                            <div class="flex gap-2">
+                        const selCount = this.selectedOrders.size;
+                        batchBar.innerHTML = `<div class="bg-accent/10 border border-accent/20 rounded-xl p-3 flex items-center justify-between flex-wrap gap-3">
+                            <span class="text-sm font-bold text-accent shrink-0"><i class="fas fa-check-double ml-1"></i> تم تحديد ${selCount} طلب</span>
+                            <button onclick="OrdersModule.batchDownloadInvoicesPDF()" class="bg-emerald-600 text-white px-5 py-2.5 rounded-lg text-sm font-bold hover:bg-emerald-700 transition shadow-sm shrink-0"><i class="fas fa-download ml-1"></i> تحميل (${selCount})</button>
+                            <div class="flex gap-2 flex-wrap items-center shrink-0">
                                 <button onclick="OrdersModule.batchChangeDate()" class="bg-accent text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-accentDark transition"><i class="fas fa-calendar-pen ml-1"></i> تغيير التاريخ</button>
                                 <button onclick="OrdersModule.clearSelection()" class="bg-gray-200 text-gray-600 px-3 py-2 rounded-lg text-sm font-bold hover:bg-gray-300 transition"><i class="fas fa-times ml-1"></i> إلغاء</button>
                             </div>
@@ -5578,6 +6275,25 @@
                 this.selectedOrders.clear();
                 this.render();
             },
+
+            async batchDownloadInvoicesPDF() {
+                if (!isAdmin() || this.selectedOrders.size === 0) return;
+                const ids = [...this.selectedOrders];
+                if (typeof OHInvoice === 'undefined' || !OHInvoice.downloadInvoicesBatch) {
+                    Swal.fire('خطأ', 'ميزة التحميل غير متاحة', 'error');
+                    return;
+                }
+                await OHInvoice.downloadInvoicesBatch(ids);
+            },
+
+            selectAllOnPage() {
+                if (!isAdmin()) return;
+                const filtered = this.getFiltered();
+                const start = (this.page - 1) * this.pageSize;
+                const pageOrders = filtered.slice(start, start + this.pageSize);
+                pageOrders.forEach(o => this.selectedOrders.add(o.id));
+                this.render();
+            },
             
             async batchChangeDate() {
                 if (!isAdmin() || this.selectedOrders.size === 0) return;
@@ -5617,9 +6333,10 @@
             },
             
             renderCard(o) {
-                const remaining = (o.price || 0) - (o.deposit || 0);
+                const remaining = getOrderRemaining(o);
                 const productsList = getProductsSummary(o);
                 const sc = statusClass(o.status);
+                const carrierName = o.shippingCarrierName || (typeof ShippingModule !== 'undefined' ? ShippingModule.getCarrierName(o.shippingCarrierId) : '') || '';
                 const statusColor = sc.includes('delivered') ? '#059669' : sc.includes('pending') ? '#F59E0B' : sc.includes('in_design') ? '#7C3AED' : sc.includes('progress') ? '#3B82F6' : sc.includes('ready') ? '#10B981' : '#EF4444';
                 return `
                 <div class="order-card slide-in" onclick="OrdersModule.showDetail(${o.id})" style="cursor:pointer;border-right:3px solid ${statusColor}">
@@ -5634,9 +6351,10 @@
                     </div>
                     <!-- Client Info -->
                     <div class="flex-1 min-w-0">
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 flex-wrap">
                             <h4 class="font-bold text-gray-900 text-sm truncate">${o.clientName || 'بدون اسم'}</h4>
                             ${o.phone ? `<a href="https://wa.me/${o.phone.replace(/[^0-9]/g,'')}" target="_blank" onclick="event.stopPropagation()" class="text-[11px] text-green-500 hover:text-green-600 shrink-0 transition" title="فتح واتساب"><i class="fab fa-whatsapp ml-0.5"></i>${o.phone}</a>` : ''}
+                            ${(o.isShipping || carrierName) && carrierName && carrierName !== '-' ? `<span class="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full shrink-0"><i class="fas fa-truck-fast text-[8px]"></i>${carrierName}</span>` : ''}
                         </div>
                         <p class="text-xs text-gray-400 truncate mt-0.5">${productsList}</p>
                         ${o.createdBy ? `<p class="text-[10px] text-gray-300 mt-0.5"><i class="fas fa-user text-[8px] ml-0.5"></i> بواسطة: <span class="font-bold text-gray-400">${(UserSvc.getByUsername(o.createdBy)||{}).name || o.createdBy}</span></p>` : ''}
@@ -5650,7 +6368,7 @@
                         <div class="w-px h-6 bg-gray-100"></div>
                         <div>
                             <p class="text-[10px] text-gray-400 leading-none mb-0.5">المتبقي</p>
-                            ${remaining > 0 && o.remainingWallet && ['delivered','customer_received','collected','fully_paid'].includes(o.status) ? `<p class="font-bold text-green-500 text-sm"><i class="fas fa-check text-[8px] ml-0.5"></i>تم التحصيل</p>` : `<p class="font-bold ${remaining > 0 ? 'text-red-500' : 'text-green-500'} text-sm">${formatCurrency(remaining)}</p>`}
+                            ${isOrderCollected(o) ? `<p class="font-bold text-green-500 text-sm"><i class="fas fa-check text-[8px] ml-0.5"></i>تم التحصيل</p>` : `<p class="font-bold ${remaining > 0 ? 'text-red-500' : 'text-green-500'} text-sm">${formatCurrency(remaining)}</p>`}
                         </div>
                     </div>` : `<div class="hidden sm:flex items-center shrink-0"><span class="text-xs text-gray-400 line-through">${formatCurrency(o.price)}</span></div>`}
                     <!-- Date -->
@@ -5671,6 +6389,9 @@
                         <button onclick="OrdersModule.openStatusModal(${o.id})" class="h-8 px-2.5 rounded-lg bg-blue-50 hover:bg-blue-100 flex items-center justify-center gap-1 transition" title="تغيير الحالة">
                             <i class="fas fa-arrows-rotate text-blue-500 text-xs"></i><span class="text-[10px] text-blue-600 font-bold">الحالة</span>
                         </button>
+                        ${canUndoDelivery(o) ? `<button onclick="OrdersModule.undoDelivery(${o.id})" class="h-8 px-2.5 rounded-lg bg-amber-50 hover:bg-amber-100 flex items-center justify-center gap-1 transition" title="تراجع عن التسليم">
+                            <i class="fas fa-rotate-left text-amber-600 text-xs"></i><span class="text-[10px] text-amber-700 font-bold">تراجع</span>
+                        </button>` : ''}
                         ${isAdmin() ? `<button onclick="OrdersModule.changeSales(${o.id})" class="w-7 h-7 rounded-lg bg-amber-50 hover:bg-amber-100 flex items-center justify-center transition" title="تغيير السيلز">
                             <i class="fas fa-user-pen text-amber-600 text-[10px]"></i>
                         </button>
@@ -5690,15 +6411,25 @@
                 </div>`;
             },
             
-            showDetail(id) {
+            async showDetail(id) {
                 const o = AppState.orders.find(x => x.id == id);
                 if (!o) return;
                 
                 document.getElementById('modalOrderId').textContent = '#' + o.id;
                 const c = document.getElementById('orderDetailContent');
+                c.innerHTML = '<p class="text-center text-gray-400 py-10"><i class="fas fa-spinner fa-spin text-2xl"></i></p>';
+                openModal('orderDetailModal');
                 
-                const remaining = (o.price || 0) - (o.deposit || 0);
-                const products = o.products && Array.isArray(o.products) ? o.products : [];
+                const remaining = getOrderRemaining(o);
+                const rawProducts = o.products && Array.isArray(o.products) ? o.products : [];
+                let products = rawProducts.map(p => ({ ...p }));
+                if (typeof DesignFileStore !== 'undefined') {
+                    if (DesignFileStore.hydrateProductAsync) {
+                        products = await Promise.all(products.map(p => DesignFileStore.hydrateProductAsync(p, o.id)));
+                    } else {
+                        products = products.map(p => DesignFileStore.hydrateProduct(p, o.id));
+                    }
+                }
                 AppState._detailProducts = products;
                 
                 c.innerHTML = `
@@ -5741,8 +6472,8 @@
                             ${products.map((p, pi) => {
                                 const typeName = p.type === 'catalog' ? (p.productName || p.catalogName) : (_prodNames[p.type] || p.name || p.productName || p.type || 'منتج');
                                 const detail = getProductDetailText(p);
-                                const hasDesign = p.hasDesignFile || p.designFileUrl;
-                                const designBtn = hasDesign ? `<button type="button" onclick="openProductDesignFile(AppState._detailProducts[${pi}])" class="mt-2 text-[10px] bg-accent/10 text-accent px-2 py-1 rounded-lg font-bold hover:bg-accent/20 transition"><i class="fas fa-palette ml-1"></i> ملف التصميم</button>` : '';
+                                const hasDesign = typeof productHasDesignFile === 'function' ? productHasDesignFile(p) : (p.hasDesignFile || p.designFileUrl || p.designFileRef);
+                                const designBtn = hasDesign ? `<button type="button" onclick="openProductDesignFile(AppState._detailProducts[${pi}])" class="mt-2 text-[10px] bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-lg font-bold hover:bg-emerald-100 transition"><i class="fas fa-download ml-1"></i> تحميل التصميم</button>` : '';
                                 return `
                                 <div class="bg-white p-3 rounded-lg border border-gray-100">
                                     <div class="flex items-center justify-between mb-1">
@@ -5774,8 +6505,8 @@
                         </div>
                         <div class="bg-red-50 p-4 rounded-xl text-center">
                             <p class="text-xs text-gray-400 mb-1">المتبقي</p>
-                            <p class="font-black ${remaining > 0 ? 'text-red-500' : 'text-green-500'}">${formatCurrency(remaining)}</p>
-                            ${remaining > 0 && o.remainingWallet ? `<p class="text-[10px] text-gray-500 mt-0.5"><i class="fas fa-${WalletMgr.getFaIcon(o.remainingWallet)} ml-0.5"></i> ${WalletMgr.getLabel(o.remainingWallet)}</p>` : remaining > 0 ? '<p class="text-[10px] text-gray-400 mt-0.5">لم يُحدد بعد</p>' : ''}
+                            ${isOrderCollected(o) ? `<p class="font-black text-green-500"><i class="fas fa-check ml-1"></i>تم التحصيل</p>` : `<p class="font-black text-red-500">${formatCurrency(remaining)}</p>`}
+                            ${isOrderCollected(o) && o.remainingWallet ? `<p class="text-[10px] text-gray-500 mt-0.5"><i class="fas fa-${WalletMgr.getFaIcon(o.remainingWallet)} ml-0.5"></i> ${WalletMgr.getLabel(o.remainingWallet)}</p>` : remaining > 0 ? '<p class="text-[10px] text-gray-400 mt-0.5">لم يُحدد بعد</p>' : ''}
                         </div>
                     </div>
                     
@@ -5800,13 +6531,17 @@
                         <p class="text-sm text-blue-600 font-bold mt-1">تكلفة الشحن: ${formatCurrency(o.shippingCost)}</p>
                     </div>` : ''}
                     
-                    ${((o.price||0)-(o.deposit||0)) > 0 && ['delivered','ready_at_branch','ready'].includes(o.status) ? (o.collected !== true ? `
+                    ${getOrderRemaining(o) > 0 && ['delivered','ready_at_branch','ready'].includes(o.status) ? `
                     <button onclick="closeModal('orderDetailModal'); OrdersModule.collectPayment(${o.id});" class="w-full bg-green-500 text-white py-3 rounded-xl font-bold hover:bg-green-600 transition text-sm mb-2">
-                        <i class="fas fa-hand-holding-dollar ml-1"></i> تحصيل المتبقي (${formatCurrency((o.price||0)-(o.deposit||0))})
-                    </button>` : `
+                        <i class="fas fa-hand-holding-dollar ml-1"></i> تحصيل المتبقي (${formatCurrency(getOrderRemaining(o))})
+                    </button>` : (isOrderCollected(o) && getOrderRemaining(o) <= 0 && o.remainingWallet ? `
                     <button onclick="closeModal('orderDetailModal'); OrdersModule.changeRemainingWallet(${o.id});" class="w-full bg-blue-500 text-white py-3 rounded-xl font-bold hover:bg-blue-600 transition text-sm mb-2">
                         <i class="fas fa-exchange-alt ml-1"></i> تغيير محفظة التحصيل (${WalletModule._getWalletName(o.remainingWallet||'cash')})
-                    </button>`) : ''}
+                    </button>` : '')}
+                    ${canUndoDelivery(o) ? `
+                    <button onclick="OrdersModule.undoDelivery(${o.id})" class="w-full bg-amber-500 text-white py-3 rounded-xl font-bold hover:bg-amber-600 transition text-sm mb-2">
+                        <i class="fas fa-rotate-left ml-1"></i> تراجع عن التسليم (استلام بالغلط)
+                    </button>` : ''}
                     <div class="flex gap-2">
                         <button onclick="OrdersModule.openStatusModal(${o.id}); closeModal('orderDetailModal');" class="flex-1 bg-primary text-white py-3 rounded-xl font-bold hover:bg-primaryLight transition text-sm">
                             <i class="fas fa-arrows-rotate ml-1"></i> تغيير الحالة
@@ -5830,7 +6565,6 @@
                         </button>
                     </div>
                 `;
-                openModal('orderDetailModal');
             },
             
             openStatusModal(id) {
@@ -5865,10 +6599,42 @@
                     'cancelled': 'cancelled'
                 };
                 const newStatus = statusMap[radio.value] || radio.value;
+                const order = AppState.orders.find(o => o.id == id);
+                if (!order) { Swal.fire('خطأ', 'الطلب غير موجود', 'error'); return; }
+                const leavingDelivered = canUndoDelivery(order) && newStatus !== 'delivered';
+
+                // Leaving delivered → restore previous payment/status snapshot first
+                if (leavingDelivered) {
+                    const { isConfirmed } = await Swal.fire({
+                        title: 'تراجع عن التسليم؟',
+                        html: `<p class="text-sm text-gray-600">سيتم إرجاع الطلب للحالة السابقة وإلغاء بيانات التحصيل المرتبطة بالتسليم بالغلط.</p>`,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        cancelButtonText: 'إلغاء',
+                        confirmButtonText: 'نعم، تراجع',
+                        confirmButtonColor: '#F59E0B'
+                    });
+                    if (!isConfirmed) return;
+                    try {
+                        await OrdersModule._applyUndoDelivery(order);
+                        const restored = AppState.orders.find(o => o.id == id);
+                        if (restored && restored.status !== newStatus) {
+                            await DataSvc.updateOrderStatus(id, newStatus);
+                        }
+                        closeModal('statusModal');
+                        Swal.fire({ icon: 'success', title: 'تم التراجع عن التسليم', timer: 1600, showConfirmButton: false });
+                        this.render();
+                        if (AppState.currentSection === 'dashboard') DashboardModule.render();
+                        if (AppState.currentSection === 'myorders') MyOrdersModule.render();
+                        return;
+                    } catch (e) {
+                        Swal.fire('خطأ', 'فشل التراجع: ' + e.message, 'error');
+                        return;
+                    }
+                }
 
                 // If marking as shipped (handed to carrier)
                 if (newStatus === 'shipped') {
-                    const order = AppState.orders.find(o => o.id == id);
                     if (order && order.isShipping) {
                         const { isConfirmed } = await Swal.fire({
                             title: '<i class="fas fa-truck-fast text-indigo-500"></i> تسليم الشحنة',
@@ -5893,9 +6659,9 @@
 
                 // If marking as delivered and there's remaining balance, prompt for collection
                 if (newStatus === 'delivered') {
-                    const order = AppState.orders.find(o => o.id == id);
                     if (order) {
-                        const remaining = (order.price || 0) - (order.deposit || 0);
+                        const undoSnap = buildDeliveryUndoSnapshot(order);
+                        const remaining = getOrderRemaining(order);
                         const todayStr = new Date().toISOString().slice(0, 10);
                         if (remaining > 0) {
                             const { value: formData } = await Swal.fire({
@@ -5956,11 +6722,17 @@
                                 if (formData.screenFile) {
                                     try { remainingScreenshot = await ImageHelper.compress(formData.screenFile); } catch(e) { console.warn('Remaining screenshot error:', e); }
                                 }
-                                const payload = { deliveredAt: new Date().toISOString() };
+                                const payload = {
+                                    deliveredAt: new Date().toISOString(),
+                                    statusBeforeDelivery: order.status,
+                                    deliveryUndoSnapshot: undoSnap
+                                };
                                 if (formData.collected) {
                                     payload.collected = true;
                                     payload.collectedAt = formData.collDate ? new Date(formData.collDate + 'T12:00:00').toISOString() : new Date().toISOString();
                                     payload.remainingWallet = formData.wallet;
+                                    payload.collectedAmount = remaining;
+                                    payload.deposit = order.price || 0;
                                     if (remainingScreenshot) payload.remainingScreenshot = remainingScreenshot;
                                 } else {
                                     payload.collected = false;
@@ -5973,7 +6745,13 @@
                         } else {
                             // No remaining - just mark delivered
                             try {
-                                const payload = { deliveredAt: new Date().toISOString(), collected: true, collectedAt: new Date().toISOString() };
+                                const payload = {
+                                    deliveredAt: new Date().toISOString(),
+                                    collected: true,
+                                    collectedAt: new Date().toISOString(),
+                                    statusBeforeDelivery: order.status,
+                                    deliveryUndoSnapshot: undoSnap
+                                };
                                 await Branch.getCollection('orders').doc(id.toString()).update(payload);
                                 if (Branch.isDefault()) db.collection('orders').doc(id.toString()).update(payload).catch(() => {});
                                 const idx = DataSvc._cache.findIndex(o => o.id == id);
@@ -5998,11 +6776,56 @@
                     Swal.fire('خطأ', 'فشل تحديث الحالة: ' + e.message, 'error');
                 }
             },
+
+            async _applyUndoDelivery(order) {
+                const { remote, local } = getUndoDeliveryPatches(order);
+                await Branch.getCollection('orders').doc(order.id.toString()).update(remote);
+                if (Branch.isDefault()) db.collection('orders').doc(order.id.toString()).update(remote).catch(() => {});
+                const idx = DataSvc._cache.findIndex(o => o.id == order.id);
+                if (idx !== -1) {
+                    applyLocalOrderPatch(DataSvc._cache[idx], local);
+                    AppState.orders = DataSvc.getOrders();
+                    Session.cacheOrders(DataSvc._cache);
+                }
+            },
+
+            async undoDelivery(id) {
+                const order = AppState.orders.find(o => o.id == id);
+                if (!order || !canUndoDelivery(order)) {
+                    Swal.fire('تنبيه', 'هذا الطلب ليس في حالة تسليم', 'info');
+                    return;
+                }
+                const prevLabel = statusLabel((order.deliveryUndoSnapshot && order.deliveryUndoSnapshot.status) || order.statusBeforeDelivery || (order.isShipping ? 'shipped' : 'ready_at_branch'));
+                const { isConfirmed } = await Swal.fire({
+                    title: '<i class="fas fa-rotate-left text-amber-500"></i> تراجع عن التسليم',
+                    html: `<div style="text-align:right;direction:rtl" class="text-sm text-gray-600">
+                        <p>سيتم إرجاع الطلب <strong>#${order.id}</strong> إلى حالة <strong>${prevLabel}</strong>.</p>
+                        <p class="mt-2 text-amber-700">ويتم إلغاء التحصيل/التسليم اللي اتعمل بالغلط، وترجع بيانات العربون والمتبقي زي ما كانت — بما فيها الفاتورة والمحفظة.</p>
+                    </div>`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    cancelButtonText: 'إلغاء',
+                    confirmButtonText: '<i class="fas fa-rotate-left ml-1"></i> تأكيد التراجع',
+                    confirmButtonColor: '#F59E0B'
+                });
+                if (!isConfirmed) return;
+                try {
+                    await this._applyUndoDelivery(order);
+                    closeModal('orderDetailModal');
+                    Swal.fire({ icon: 'success', title: 'تم التراجع عن التسليم', text: `الحالة الآن: ${statusLabel((AppState.orders.find(o => o.id == id) || {}).status)}`, timer: 1800, showConfirmButton: false });
+                    this.render();
+                    if (AppState.currentSection === 'dashboard') DashboardModule.render();
+                    if (AppState.currentSection === 'myorders') MyOrdersModule.render();
+                    if (AppState.currentSection === 'wallet') WalletModule.render();
+                } catch (e) {
+                    Swal.fire('خطأ', 'فشل التراجع: ' + e.message, 'error');
+                }
+            },
             
             async changeRemainingWallet(id) {
                 const order = AppState.orders.find(o => o.id == id);
                 if (!order) return;
-                const remaining = (order.price || 0) - (order.deposit || 0);
+                const remaining = getOrderRemaining(order);
                 if (remaining <= 0) { Swal.fire('تنبيه', 'لا يوجد مبلغ متبقي', 'info'); return; }
                 const currentWallet = order.remainingWallet || 'cash';
                 const currentName = WalletModule._getWalletName(currentWallet);
@@ -6048,7 +6871,7 @@
             async collectPayment(id) {
                 const order = AppState.orders.find(o => o.id == id);
                 if (!order) return;
-                const remaining = (order.price || 0) - (order.deposit || 0);
+                const remaining = getOrderRemaining(order);
                 if (remaining <= 0) { Swal.fire('تنبيه', 'لا يوجد مبلغ متبقي', 'info'); return; }
                 const todayStr = new Date().toISOString().slice(0, 10);
                 const initWallet = order.remainingWallet || 'cash';
@@ -6096,8 +6919,14 @@
                     const payload = {
                         collected: true,
                         collectedAt: formData.collDate ? new Date(formData.collDate + 'T12:00:00').toISOString() : new Date().toISOString(),
-                        remainingWallet: formData.wallet
+                        remainingWallet: formData.wallet,
+                        collectedAmount: remaining,
+                        deposit: order.price || 0
                     };
+                    if (!order.deliveryUndoSnapshot) {
+                        payload.deliveryUndoSnapshot = buildDeliveryUndoSnapshot(order);
+                        payload.statusBeforeDelivery = order.status;
+                    }
                     if (remainingScreenshot) payload.remainingScreenshot = remainingScreenshot;
                     await Branch.getCollection('orders').doc(id.toString()).update(payload);
                     if (Branch.isDefault()) db.collection('orders').doc(id.toString()).update(payload).catch(() => {});
@@ -6334,6 +7163,16 @@
                 document.getElementById('orderShippingWallet').value = o.shippingWallet || 'cash';
                 document.getElementById('orderShippingAddress').value = o.shippingAddress || '';
 
+                // Load discount
+                const discountCheck = document.getElementById('discountCheck');
+                const discountPct = o.discountPercentage || 0;
+                if (discountCheck) {
+                    discountCheck.checked = discountPct > 0 || (o.discountAmount && o.discountAmount > 0);
+                    toggleDiscountFields();
+                }
+                const discountPctEl = document.getElementById('discountPercentage');
+                if (discountPctEl) discountPctEl.value = discountPct || 0;
+
                 // Load products into OrderProducts
                 if (typeof OrderProducts !== 'undefined' && o.products && o.products.length > 0) {
                     o.products.forEach(p => {
@@ -6382,16 +7221,38 @@
                     return;
                 }
                 
-                const products = (typeof OrderProducts !== 'undefined') ? OrderProducts.getProducts() : [];
+                let products = (typeof OrderProducts !== 'undefined') ? OrderProducts.getProducts() : [];
                 if (!products || products.length === 0) {
                     Swal.close();
                     if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = '1'; }
                     Swal.fire('تنبيه', 'يرجى إضافة منتج واحد على الأقل', 'warning');
                     return;
                 }
+
+                const pendingOrderId = isEditing ? editId : Date.now();
+                if (typeof DesignCloudStore !== 'undefined' && DesignCloudStore.getStorage()) {
+                    try {
+                        products = await DesignCloudStore.ensureProductsCloud(products, pendingOrderId);
+                        if (typeof OrderProducts !== 'undefined' && Array.isArray(OrderProducts.currentProducts)) {
+                            products.forEach(cp => {
+                                const idx = OrderProducts.currentProducts.findIndex(p => p.id == cp.id);
+                                if (idx !== -1) Object.assign(OrderProducts.currentProducts[idx], cp);
+                            });
+                        }
+                    } catch (uploadErr) {
+                        Swal.close();
+                        if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = '1'; }
+                        Swal.fire('خطأ', 'فشل رفع ملفات التصميم: ' + (uploadErr.message || uploadErr), 'error');
+                        return;
+                    }
+                }
                 
                 const totalPrice = products.reduce((s, p) => s + OrderSanitizer.productPrice(p), 0);
                 const totalProductionCost = products.reduce((s, p) => s + (p.productionCost || 0), 0);
+                const discountPct = (document.getElementById('discountCheck')?.checked)
+                    ? (parseFloat(document.getElementById('discountPercentage')?.value) || 0) : 0;
+                const discountAmount = discountPct > 0 ? Math.min(totalPrice, (totalPrice * discountPct) / 100) : 0;
+                const priceAfterDiscount = Math.max(0, totalPrice - discountAmount);
                 
                 const deposit = parseFloat(f.deposit.value) || 0;
                 
@@ -6417,11 +7278,13 @@
                             clientName: enteredName,
                             phone: enteredPhone,
                             details: f.details.value.trim(),
-                            price: totalPrice + shippingCost,
+                            price: priceAfterDiscount + shippingCost,
                             deposit: deposit,
                             paymentMethod: f.paymentMethod.value,
                             products: products.map(p => OrderSanitizer.cleanProduct(p, true)),
                             productionCost: totalProductionCost,
+                            discountPercentage: discountPct > 0 ? discountPct : null,
+                            discountAmount: discountAmount > 0 ? discountAmount : null,
                             isShipping: isShipping,
                             shippingCarrierId: shippingCarrierId || null,
                             shippingCarrierName: shippingCarrierName,
@@ -6457,10 +7320,10 @@
                     }
                 } else {
                     // ---- CREATE new order ----
-                    const finalPrice = totalPrice + shippingCost;
+                    const finalPrice = priceAfterDiscount + shippingCost;
                     const remaining = Math.max(0, finalPrice - deposit);
                     const order = {
-                        id: Date.now(),
+                        id: pendingOrderId,
                         clientName: enteredName,
                         phone: enteredPhone,
                         details: f.details.value.trim(),
@@ -6471,6 +7334,8 @@
                         status: 'pending',
                         products: products.map(p => OrderSanitizer.cleanProduct(p, true)),
                         productionCost: totalProductionCost,
+                        discountPercentage: discountPct > 0 ? discountPct : null,
+                        discountAmount: discountAmount > 0 ? discountAmount : null,
                         isShipping: isShipping,
                         shippingCarrierId: shippingCarrierId || null,
                         shippingCarrierName: shippingCarrierName,
@@ -6844,13 +7709,11 @@
 
                 // Remaining: filter by collectedAt date (exclude cancelled)
                 allOrders.filter(o => mapStatus(o.status) !== 'cancelled').forEach(o => {
-                    const remaining = Math.max(0, (o.price || 0) - (o.deposit || 0));
+                    if (o.collected !== true) return;
+                    const remaining = getCollectedRemainingAmount(o);
                     if (remaining <= 0) return;
-                    const isDelivered = ['delivered', 'ready_at_branch', 'ready'].includes(o.status);
+                    const isDelivered = ['delivered', 'ready_at_branch', 'ready', 'customer_received', 'collected', 'fully_paid'].includes(o.status);
                     if (!isDelivered) return;
-                    // Only count if collected (backward compat: old orders without collected field count as collected)
-                    const isCollected = o.collected === true || (o.collected === undefined && isDelivered);
-                    if (!isCollected) return;
                     const collDate = o.collectedAt || o.deliveredAt || o.createdAt;
                     if (!this._inDateRange(collDate)) return;
                     const remWallet = o.remainingWallet || 'cash';
@@ -6903,7 +7766,7 @@
                 const orders = AppState.orders || [];
                 const totalCollected = Object.values(wallets).reduce((s, w) => s + w.total, 0);
                 const totalRemaining = orders.reduce((s, o) => {
-                    const rem = Math.max(0, (o.price || 0) - (o.deposit || 0));
+                    const rem = getOrderRemaining(o);
                     if (rem <= 0) return s;
                     const isDel = ['delivered', 'ready_at_branch', 'ready'].includes(o.status);
                     if (!isDel) return s + rem;
@@ -7021,8 +7884,10 @@
                 const lux = this._getWalletLuxStyle(walletKey);
 
                 container.innerHTML = `
-                    <div class="wallet-lux-header mb-4" style="background:${lux.grad}">
-                        <div>
+                    <div class="wallet-lux-header mb-4" style="background:${lux.grad};--wallet-glow:${lux.glow}">
+                        <div class="wallet-lux-glow-spot"></div>
+                        <div class="wallet-lux-edge"></div>
+                        <div style="position:relative;z-index:2">
                             <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
                                 <button onclick="WalletModule.render()" class="px-3 py-1.5 rounded-lg text-sm font-bold transition" style="background:rgba(255,255,255,0.18);color:#fff;border:1px solid rgba(255,255,255,0.2)"><i class="fas fa-arrow-right ml-1"></i> رجوع</button>
                                 <div class="wallet-lux-icon" style="width:40px;height:40px;font-size:16px"><i class="${meta.icon}"></i></div>
@@ -7106,14 +7971,15 @@
                 if (!container) return;
                 const orders = AppState.orders || [];
                 // Build per-order breakdown
-                const rows = orders.filter(o => (o.deposit || 0) > 0 || (o.remainingWallet && ['delivered','customer_received','collected','fully_paid'].includes(o.status))).map(o => {
+                const rows = orders.filter(o => (o.deposit || 0) > 0 || o.collected === true || o.remainingWallet).map(o => {
                     const deposit = o.deposit || 0;
-                    const remaining = Math.max(0, (o.price || 0) - deposit);
+                    const remaining = getOrderRemaining(o);
+                    const collectedAmt = getCollectedRemainingAmount(o);
                     const depMethod = (typeof WalletMgr !== 'undefined' ? WalletMgr.getLabel(o.paymentMethod || 'cash') : (o.paymentMethod || 'نقدي'));
                     const remMethod = o.remainingWallet ? (typeof WalletMgr !== 'undefined' ? WalletMgr.getLabel(o.remainingWallet) : o.remainingWallet) : '';
-                    const isCollected = remaining > 0 && o.remainingWallet && ['delivered','customer_received','collected','fully_paid'].includes(o.status);
+                    const isCollected = isOrderCollected(o) && collectedAmt > 0;
                     const phone = o.phone || '';
-                    return { id: o.id, client: o.clientName || 'بدون اسم', phone, deposit, remaining, depMethod, remMethod, isCollected, total: o.price || 0, date: o.createdAt };
+                    return { id: o.id, client: o.clientName || 'بدون اسم', phone, deposit, remaining, collectedAmt, depMethod, remMethod, isCollected, total: o.price || 0, date: o.createdAt };
                 }).sort((a,b) => new Date(b.date) - new Date(a.date));
 
                 container.innerHTML = `
@@ -7138,7 +8004,7 @@
                                     <div class="flex flex-wrap gap-3 text-xs">
                                         <span class="bg-primary/5 px-2.5 py-1 rounded-lg text-gray-700 font-bold">الإجمالي: ${formatCurrency(r.total)}</span>
                                         ${r.deposit > 0 ? `<span class="bg-green-50 px-2.5 py-1 rounded-lg text-green-700 font-bold"><i class="fas fa-arrow-down text-[9px] ml-1"></i>عربون: ${formatCurrency(r.deposit)} <span class="text-green-500">(${r.depMethod})</span></span>` : ''}
-                                        ${r.isCollected ? `<span class="bg-accent/10 px-2.5 py-1 rounded-lg text-accent font-bold"><i class="fas fa-check-double text-[9px] ml-1"></i>متبقي: ${formatCurrency(r.remaining)} <span class="text-accent/70">(${r.remMethod})</span></span>` : r.remaining > 0 ? `<span class="bg-red-50 px-2.5 py-1 rounded-lg text-red-500 font-bold"><i class="fas fa-clock text-[9px] ml-1"></i>متبقي: ${formatCurrency(r.remaining)} <span class="text-red-400">(لم يُحصّل)</span></span>` : ''}
+                                        ${r.isCollected ? `<span class="bg-accent/10 px-2.5 py-1 rounded-lg text-accent font-bold"><i class="fas fa-check-double text-[9px] ml-1"></i>متبقي: ${formatCurrency(r.collectedAmt)} <span class="text-accent/70">(${r.remMethod})</span></span>` : r.remaining > 0 ? `<span class="bg-red-50 px-2.5 py-1 rounded-lg text-red-500 font-bold"><i class="fas fa-clock text-[9px] ml-1"></i>متبقي: ${formatCurrency(r.remaining)} <span class="text-red-400">(لم يُحصّل)</span></span>` : ''}
                                     </div>
                                 </div>
                             `).join('') : '<div class="p-8 text-center text-gray-300"><i class="fas fa-inbox text-3xl mb-2 block"></i><p class="text-sm">لا توجد عمليات</p></div>'}
@@ -7273,13 +8139,11 @@
                 const container = document.getElementById('walletContent');
                 if (!container) return;
                 const orders = (AppState.orders || []).filter(o => {
-                    const rem = Math.max(0, (o.price || 0) - (o.deposit || 0));
-                    if (rem <= 0) return false;
-                    const isCollected = o.remainingWallet && ['delivered','customer_received','collected','fully_paid'].includes(o.status);
-                    return !isCollected;
+                    const rem = getOrderRemaining(o);
+                    return rem > 0 && !isOrderCollected(o);
                 }).sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-                const totalRem = orders.reduce((s,o) => s + Math.max(0, (o.price||0) - (o.deposit||0)), 0);
+                const totalRem = orders.reduce((s,o) => s + getOrderRemaining(o), 0);
 
                 container.innerHTML = `
                     <div class="mb-4 flex items-center gap-3">
@@ -7296,7 +8160,7 @@
                         </div>
                         <div class="divide-y divide-gray-50 max-h-[600px] overflow-y-auto">
                             ${orders.length > 0 ? orders.map(o => {
-                                const rem = Math.max(0, (o.price||0) - (o.deposit||0));
+                                const rem = getOrderRemaining(o);
                                 const phone = o.phone || '';
                                 return `
                                 <div class="flex items-center gap-3 p-4 hover:bg-gray-50/50 transition cursor-pointer" onclick="OrdersModule.showDetail(${o.id})">
@@ -9731,7 +10595,6 @@ ${'<'}/script></body></html>`;
             document.getElementById('linkDigitalPricing')?.classList.add('hidden-section');
             document.getElementById('linkSuppliers')?.classList.add('hidden-section');
             document.getElementById('linkShipping')?.classList.add('hidden-section');
-            document.getElementById('linkCatalog')?.classList.add('hidden-section');
             document.getElementById('workerSectionLabel')?.classList.add('hidden-section');
             document.getElementById('linkExecution')?.classList.add('hidden-section');
             document.getElementById('linkWorkerWallet')?.classList.add('hidden-section');
@@ -9745,7 +10608,6 @@ ${'<'}/script></body></html>`;
                 document.getElementById('linkDigitalPricing')?.classList.remove('hidden-section');
                 document.getElementById('linkSuppliers')?.classList.remove('hidden-section');
                 document.getElementById('linkShipping')?.classList.remove('hidden-section');
-                document.getElementById('linkCatalog')?.classList.remove('hidden-section');
                 // Show all sidebar links
                 document.querySelector('[data-section="customers"]')?.classList.remove('hidden-section');
                 document.querySelector('[data-section="employees"]')?.classList.remove('hidden-section');
@@ -9974,7 +10836,8 @@ ${'<'}/script></body></html>`;
     <script src="assets/js/plastic-bags-pricing.js"></script>
     <script src="assets/js/inkjet-paper-printing-pricing.js"></script>
     <script src="assets/js/safety-printing-pricing.js"></script>
-    <script src="assets/js/digital-printing-pricing.js"></script>
+    <script src="assets/js/digital-printing-pricing.js?v=4"></script>
+    <script src="assets/js/print-machines.js?v=4"></script>
     <script src="assets/js/paper-bags-pricing.js"></script>
     <script src="assets/js/brochures-pricing.js"></script>
     <script src="assets/js/catalogs-pricing.js"></script>
@@ -9989,13 +10852,13 @@ ${'<'}/script></body></html>`;
     <script src="assets/js/shippingPricingService.js"></script>
     
     <!-- ===== Pricing Admin ===== -->
-    <script src="assets/js/pricing-admin.js?v=3"></script>
+    <script src="assets/js/pricing-admin.js?v=4"></script>
     
     <!-- ===== Product Catalog ===== -->
-    <script src="assets/js/product-catalog.js?v=1"></script>
+    <script src="assets/js/product-catalog.js?v=6"></script>
 
     <!-- ===== Order Products (uses pricing modules) ===== -->
-    <script src="assets/js/order-products.js?v=4"></script>
+    <script src="assets/js/order-products.js?v=10"></script>
     <script src="assets/js/digital-printing.js"></script>
     <script src="assets/js/suppliers.js"></script>
     <script src="assets/js/shipping.js"></script>

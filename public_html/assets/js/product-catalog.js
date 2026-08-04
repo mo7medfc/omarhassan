@@ -906,10 +906,13 @@ const ProductCatalog = {
     _currentGroup: null,
     _currentStampSub: null,
     _stampSel: {},
+    _stampOpenPicker: null,
     _stampDesignTab: 'file',
     _selections: {},
     _designFile: { url: '', name: '', data: '' },
-    ALLOWED_EXT: ['pdf', 'psd', 'ai', 'cdr', 'png', 'jpg', 'jpeg'],
+    ALLOWED_EXT: ['pdf', 'psd', 'ai', 'cdr', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg', 'eps', 'tif', 'tiff', 'zip', 'rar', 'doc', 'docx'],
+    DESIGN_ACCEPT: '.pdf,.png,.jpg,.jpeg,.gif,.webp,.bmp,.svg,.psd,.ai,.cdr,.eps,.tif,.tiff,.zip,.rar,.doc,.docx,image/*,application/pdf',
+    DESIGN_MAX_BYTES: 50 * 1024 * 1024,
 
     ITEM_ICONS: {
         porcelain_mug: 'fa-mug-saucer',
@@ -1148,12 +1151,20 @@ const ProductCatalog = {
         const subtitle = document.getElementById('catalogSubcategorySubtitle');
         const grid = document.getElementById('catalogSubcategoryGrid');
         if (title) title.textContent = group.name;
-        if (subtitle) subtitle.textContent = 'اختر القسم الفرعي';
+        if (subtitle) subtitle.textContent = groupId === 'stamps' ? 'اختر قسم الأختام' : 'اختر القسم الفرعي';
         if (grid) {
             const subs = (group.subcategories || []).slice().sort((a, b) => (a.sortOrder || 99) - (b.sortOrder || 99));
-            grid.innerHTML = subs.length
-                ? subs.map(s => this._subcategoryCardHtml(s)).join('')
-                : '<p class="text-center text-gray-400 py-12 col-span-full">لا توجد أقسام فرعية</p>';
+            if (groupId === 'stamps') {
+                grid.className = 'grid grid-cols-2 gap-4 sm:gap-5 max-w-2xl mx-auto w-full';
+                grid.innerHTML = subs.length
+                    ? subs.map(s => this._stampCategoryCardHtml(s)).join('')
+                    : '<p class="text-center text-gray-400 py-12 col-span-2">لا توجد أقسام فرعية</p>';
+            } else {
+                grid.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6';
+                grid.innerHTML = subs.length
+                    ? subs.map(s => this._subcategoryCardHtml(s)).join('')
+                    : '<p class="text-center text-gray-400 py-12 col-span-full">لا توجد أقسام فرعية</p>';
+            }
         }
         openModal('catalogSubcategoryModal');
     },
@@ -1224,84 +1235,223 @@ const ProductCatalog = {
             subcategoryName: sub.name,
             pricingMode: 'stamp_matrix'
         };
-        if (sub.configType === 'stamp_simple' || sub.configType === 'stamp_special') {
-            this._stampSel.item = sub.items?.[0]?.id || '';
-        } else if (sub.stampTypes?.length) {
-            this._stampSel.stampType = sub.stampTypes[0].id;
-            const firstSizes = sub.stampTypes[0].sizes || [];
-            if (firstSizes.length) {
-                this._stampSel.size = firstSizes[0].id;
-                if (firstSizes[0].variants?.length) this._stampSel.variant = firstSizes[0].variants[0].id;
-            }
-        }
+        this._stampOpenPicker = sub.stampTypes?.length ? 'stampType' : 'item';
         this.renderStampConfigurator();
         openModal('catalogProductConfigModal');
     },
 
-    _stampChip(value, label, selected, field) {
-        const active = selected === value;
-        return `<button type="button" onclick="ProductCatalog.onStampSelect('${field}','${this._esc(value)}')"
-            class="px-4 py-2.5 rounded-xl border-2 text-sm font-bold transition-all ${active
-                ? 'border-accent bg-accent/15 text-gray-900 shadow-sm ring-2 ring-accent/25'
-                : 'border-gray-200 bg-white text-gray-600 hover:border-accent/50'}">${this._esc(label)}</button>`;
+    _stampPriceHint(price) {
+        if (price == null || price === '') return '';
+        return Number(price).toLocaleString('ar-EG') + ' ج.م';
     },
 
-    _renderStampTypeSection(sub) {
-        if (!sub.stampTypes?.length) return '';
-        const sel = this._stampSel.stampType;
-        return `<div class="form-group-catalog" id="stampTypeSection">
-            <label class="block text-sm font-bold text-gray-800 mb-2">نوع الختم <span class="text-red-500">*</span></label>
-            <div class="flex flex-wrap gap-2">${sub.stampTypes.map(t => this._stampChip(t.id, t.label, sel, 'stampType')).join('')}</div>
+    _stampMinSizeHint(size) {
+        const prices = (size?.variants || []).map(v => v.price).filter(p => p > 0);
+        if (!prices.length) return '';
+        return 'من ' + Math.min(...prices).toLocaleString('ar-EG') + ' ج.م';
+    },
+
+    _stampScrollActiveCls(active) {
+        return active
+            ? 'border-amber-500 bg-gradient-to-l from-amber-50 via-orange-50/80 to-white shadow-md shadow-amber-100/80 ring-2 ring-amber-300/50'
+            : 'border-gray-200/90 bg-white hover:border-amber-300/70 hover:bg-gradient-to-l hover:from-amber-50/40 hover:to-white';
+    },
+
+    _stampScrollOption(value, label, selected, field, hint, icon) {
+        const active = selected === value;
+        const ic = icon ? `<span class="w-9 h-9 rounded-xl bg-amber-100/80 border border-amber-200/60 flex items-center justify-center shrink-0"><i class="fas ${icon} text-amber-700 text-sm"></i></span>` : '';
+        const hintHtml = hint
+            ? `<span class="text-[11px] font-bold text-amber-700 whitespace-nowrap">${this._esc(hint)}</span>`
+            : '';
+        return `<button type="button" data-value="${this._esc(value)}" onclick="ProductCatalog.onStampSelect('${field}','${this._esc(value)}')"
+            class="stamp-scroll-opt w-full text-right p-3.5 rounded-xl border-2 transition-all duration-200 ${this._stampScrollActiveCls(active)}">
+            <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3 min-w-0">
+                    ${ic}
+                    <span class="font-bold text-sm text-gray-800 leading-snug">${this._esc(label)}</span>
+                </div>
+                ${hintHtml}
+            </div>
+        </button>`;
+    },
+
+    _stampScrollListHtml(sectionId, label, field, options, selected) {
+        const opts = options.map(o => this._stampScrollOption(o.value, o.label, selected, field, o.hint, o.icon)).join('');
+        return `<div class="form-group-catalog" id="${sectionId}">
+            <label class="block text-sm font-bold text-gray-800 mb-2 flex items-center gap-2">
+                <span class="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-100 to-orange-50 border border-amber-200/60 flex items-center justify-center">
+                    <i class="fas fa-stamp text-amber-700 text-xs"></i>
+                </span>
+                ${this._esc(label)} <span class="text-red-500">*</span>
+            </label>
+            <div class="stamp-scroll-wrap relative rounded-2xl border border-amber-200/70 bg-gradient-to-b from-amber-50/50 via-white to-orange-50/30 shadow-inner">
+                <div class="stamp-scroll-list max-h-44 overflow-y-auto p-2 space-y-1.5" style="scrollbar-width:thin">
+                    ${opts}
+                </div>
+                <div class="pointer-events-none absolute inset-x-0 top-0 h-5 bg-gradient-to-b from-amber-50/95 to-transparent rounded-t-2xl"></div>
+                <div class="pointer-events-none absolute inset-x-0 bottom-0 h-5 bg-gradient-to-t from-orange-50/90 to-transparent rounded-b-2xl"></div>
+            </div>
         </div>`;
     },
 
-    _renderStampSizeSection(sub) {
-        if (!sub.stampTypes?.length) return '';
-        const st = StampPricing.getStampType(sub, this._stampSel.stampType);
-        if (!st) return '';
-        const sel = this._stampSel.size;
-        let chips = (st.sizes || []).map(s => this._stampChip(s.id, s.label, sel, 'size')).join('');
-        if (sub.configType === 'stamp_wood' && sub.allowCustomSize) {
-            chips += this._stampChip('custom', 'مقاس مخصص', sel, 'size');
+    _stampCategoryCardHtml(sub) {
+        const theme = this._getSubTheme(sub.id);
+        const icon = sub.icon || theme.icon || 'fa-stamp';
+        return `<button type="button" onclick="ProductCatalog.openSubcategory('${this._esc(sub.id)}')"
+            class="group relative rounded-2xl sm:rounded-3xl overflow-hidden border border-white/10 hover:border-amber-400/55 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-amber-900/25 text-right w-full">
+            <div class="relative h-28 sm:h-32 flex items-center justify-center overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-br ${theme.card}"></div>
+                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 rounded-full bg-white/5 blur-2xl"></div>
+                <div class="relative w-16 h-16 sm:w-[4.5rem] sm:h-[4.5rem] rounded-2xl bg-gradient-to-br ${theme.iconWrap} border border-white/15 flex items-center justify-center shadow-xl group-hover:scale-110 group-hover:border-amber-300/40 transition-all duration-300">
+                    <i class="fas ${icon} text-2xl sm:text-3xl ${theme.iconColor}"></i>
+                </div>
+            </div>
+            <div class="px-3 py-3 sm:py-4 bg-gradient-to-b from-[#181820] to-[#101018] border-t border-white/5">
+                <h4 class="font-black text-white text-xs sm:text-sm text-center leading-snug">${this._esc(sub.name)}</h4>
+            </div>
+        </button>`;
+    },
+
+    _getStampPickerSteps(sub) {
+        if (sub.configType === 'stamp_simple' || sub.configType === 'stamp_special') {
+            return [{ field: 'item', label: 'نوع الختم' }];
         }
+        const steps = [
+            { field: 'stampType', label: 'نوع الختم' },
+            { field: 'size', label: 'المقاس' }
+        ];
+        if (sub.configType === 'stamp_automatic') {
+            steps.push({ field: 'variant', label: 'نوع المنتج' });
+        }
+        return steps;
+    },
+
+    _getStampPickerOptions(sub, field) {
+        if (field === 'stampType') {
+            return (sub.stampTypes || []).map(t => ({ value: t.id, label: t.label }));
+        }
+        if (field === 'size') {
+            const st = StampPricing.getStampType(sub, this._stampSel.stampType);
+            if (!st) return [];
+            const opts = (st.sizes || []).map(s => ({
+                value: s.id,
+                label: s.label,
+                hint: sub.configType === 'stamp_wood' ? this._stampPriceHint(s.price) : this._stampMinSizeHint(s)
+            }));
+            if (sub.configType === 'stamp_wood' && sub.allowCustomSize) {
+                opts.push({ value: 'custom', label: 'مقاس مخصص', hint: 'تسعير يدوي' });
+            }
+            return opts;
+        }
+        if (field === 'variant') {
+            const st = StampPricing.getStampType(sub, this._stampSel.stampType);
+            const sz = StampPricing.getSize(st, this._stampSel.size);
+            return (sz?.variants || []).map(v => ({ value: v.id, label: v.label, hint: this._stampPriceHint(v.price) }));
+        }
+        if (field === 'item') {
+            return (sub.items || []).map(it => ({
+                value: it.id,
+                label: it.label,
+                hint: it.manualPrice ? 'سعر يدوي' : this._stampPriceHint(it.price)
+            }));
+        }
+        return [];
+    },
+
+    _getStampPickerDisplayValue(sub, field) {
+        const sel = this._stampSel;
+        if (field === 'stampType') {
+            if (!sel.stampType) return null;
+            return StampPricing.getStampType(sub, sel.stampType)?.label || null;
+        }
+        if (field === 'size') {
+            if (!sel.size) return null;
+            if (sel.size === 'custom') return sel.customSize?.trim() || 'مقاس مخصص';
+            const st = StampPricing.getStampType(sub, sel.stampType);
+            return StampPricing.getSize(st, sel.size)?.label || null;
+        }
+        if (field === 'variant') {
+            if (!sel.variant) return null;
+            const st = StampPricing.getStampType(sub, sel.stampType);
+            const sz = StampPricing.getSize(st, sel.size);
+            return StampPricing.getVariant(sz, sel.variant)?.label || null;
+        }
+        if (field === 'item') {
+            if (!sel.item) return null;
+            return StampPricing.getItem(sub, sel.item)?.label || null;
+        }
+        return null;
+    },
+
+    _isStampPickerEnabled(sub, field) {
+        if (field === 'stampType' || field === 'item') return true;
+        if (field === 'size') return !!this._stampSel.stampType;
+        if (field === 'variant') {
+            return !!this._stampSel.stampType && !!this._stampSel.size && this._stampSel.size !== 'custom';
+        }
+        return false;
+    },
+
+    _renderStampPickersAccordion(sub) {
+        const steps = this._getStampPickerSteps(sub);
+        const rows = steps.map(step => {
+            const enabled = this._isStampPickerEnabled(sub, step.field);
+            const isOpen = this._stampOpenPicker === step.field && enabled;
+            const displayVal = this._getStampPickerDisplayValue(sub, step.field);
+            const placeholder = 'اضغط لاختيار ' + step.label;
+            const options = enabled ? this._getStampPickerOptions(sub, step.field) : [];
+            const bodyHtml = isOpen && options.length ? `
+                <div class="p-2.5 border-t border-amber-200/60 bg-gradient-to-b from-amber-50/70 to-white">
+                    <div class="relative rounded-xl border border-amber-200/60 overflow-hidden shadow-inner">
+                        <div class="stamp-scroll-list max-h-52 overflow-y-auto p-2 space-y-1.5" style="scrollbar-width:thin">
+                            ${options.map(o => this._stampScrollOption(o.value, o.label, this._stampSel[step.field], step.field, o.hint)).join('')}
+                        </div>
+                        <div class="pointer-events-none absolute inset-x-0 top-0 h-4 bg-gradient-to-b from-amber-50 to-transparent"></div>
+                        <div class="pointer-events-none absolute inset-x-0 bottom-0 h-4 bg-gradient-to-t from-white to-transparent"></div>
+                    </div>
+                </div>` : '';
+            const disabledCls = enabled ? '' : 'opacity-45';
+            return `
+            <div class="stamp-picker-block rounded-2xl border-2 ${isOpen ? 'border-amber-400 shadow-lg shadow-amber-100/80' : 'border-gray-200'} overflow-hidden mb-3 transition-all duration-300 ${disabledCls}" id="stampPicker_${step.field}">
+                <button type="button" onclick="ProductCatalog.toggleStampPicker('${step.field}')"
+                    class="stamp-picker-header w-full flex items-center justify-between gap-3 p-4 bg-gradient-to-l ${isOpen ? 'from-amber-50 via-orange-50/60 to-white' : 'from-white to-gray-50/90'} ${enabled ? 'hover:from-amber-50/80 cursor-pointer' : 'cursor-not-allowed'} transition text-right">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <span class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-100 to-orange-50 border border-amber-200/70 flex items-center justify-center shrink-0">
+                            <i class="fas ${displayVal ? 'fa-circle-check text-emerald-600' : 'fa-stamp text-amber-700'} text-sm"></i>
+                        </span>
+                        <div class="text-right min-w-0">
+                            <span class="block text-[10px] text-gray-400 font-bold">${this._esc(step.label)}</span>
+                            <span class="block text-sm font-black truncate ${displayVal ? 'text-gray-800' : 'text-amber-600'}">${this._esc(displayVal || placeholder)}</span>
+                        </div>
+                    </div>
+                    <i class="fas fa-chevron-down text-amber-600 text-sm transition-transform duration-300 shrink-0 ${isOpen ? 'rotate-180' : ''}"></i>
+                </button>
+                ${bodyHtml}
+            </div>`;
+        }).join('');
+
         let customInput = '';
-        if (sub.configType === 'stamp_wood' && sel === 'custom') {
+        if (sub.configType === 'stamp_wood' && this._stampSel.size === 'custom') {
             customInput = `<input type="text" id="catStampCustomSize" value="${this._esc(this._stampSel.customSize || '')}"
                 oninput="ProductCatalog.onStampCustomSizeInput()" placeholder="اكتب المقاس المطلوب"
-                class="w-full mt-3 border border-gray-300 p-3 rounded-xl focus:border-accent outline-none text-sm">`;
+                class="w-full mb-3 border border-amber-200 p-3 rounded-xl focus:border-amber-500 outline-none text-sm bg-amber-50/30">`;
         }
-        return `<div class="form-group-catalog" id="stampSizeSection">
-            <label class="block text-sm font-bold text-gray-800 mb-2">المقاس <span class="text-red-500">*</span></label>
-            <div class="flex flex-wrap gap-2">${chips}</div>${customInput}
-        </div>`;
+
+        return `${rows}${customInput}${this._renderStampManualPriceSection(sub)}`;
     },
 
-    _renderStampVariantSection(sub) {
-        if (sub.configType !== 'stamp_automatic') return '';
-        const st = StampPricing.getStampType(sub, this._stampSel.stampType);
-        const sz = StampPricing.getSize(st, this._stampSel.size);
-        if (!sz?.variants?.length) return '';
-        const sel = this._stampSel.variant;
-        return `<div class="form-group-catalog" id="stampVariantSection">
-            <label class="block text-sm font-bold text-gray-800 mb-2">نوع المنتج <span class="text-red-500">*</span></label>
-            <div class="flex flex-wrap gap-2">${sz.variants.map(v => this._stampChip(v.id, v.label, sel, 'variant')).join('')}</div>
-        </div>`;
+    toggleStampPicker(field) {
+        const sub = this._currentStampSub;
+        if (!sub || !this._isStampPickerEnabled(sub, field)) return;
+        this._stampOpenPicker = this._stampOpenPicker === field ? null : field;
+        this._refreshStampPickers();
     },
 
-    _renderStampItemSection(sub) {
-        if (!sub.items?.length) return '';
-        const sel = this._stampSel.item;
-        return `<div class="form-group-catalog" id="stampItemSection">
-            <label class="block text-sm font-bold text-gray-800 mb-2">الخيار <span class="text-red-500">*</span></label>
-            <div class="grid grid-cols-1 gap-2">${sub.items.map(it => {
-                const active = sel === it.id;
-                return `<button type="button" onclick="ProductCatalog.onStampSelect('item','${this._esc(it.id)}')"
-                    class="w-full text-right p-4 rounded-xl border-2 transition ${active ? 'border-accent bg-accent/10' : 'border-gray-200 bg-white hover:border-accent/40'}">
-                    <span class="font-bold text-gray-800">${this._esc(it.label)}</span>
-                    ${it.manualPrice ? '<span class="block text-xs text-gray-400 mt-1">يتم تحديد السعر يدوياً</span>' : ''}
-                </button>`;
-            }).join('')}</div>
-        </div>`;
+    _refreshStampPickers() {
+        const sub = this._currentStampSub;
+        const wrap = document.getElementById('stampPickersWrap');
+        if (!wrap || !sub) return;
+        wrap.innerHTML = this._renderStampPickersAccordion(sub);
     },
 
     _renderStampManualPriceSection(sub) {
@@ -1322,8 +1472,39 @@ const ProductCatalog = {
         </div>`;
     },
 
+    _renderDesignSection(title) {
+        const showLabel = title !== null && title !== undefined;
+        const label = title || 'ملف التصميم';
+        const has = !!(this._designFile?.url);
+        const preview = has ? `
+            <div class="flex items-center justify-between gap-2 mt-3 p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
+                <span class="text-xs text-emerald-800 font-bold truncate"><i class="fas fa-file-circle-check ml-1"></i> ${this._esc(this._designFile.name)}</span>
+                <div class="flex gap-1 shrink-0">
+                    <label class="text-[10px] text-blue-700 font-bold px-2 py-1 rounded-lg hover:bg-blue-50 cursor-pointer">
+                        <i class="fas fa-rotate ml-1"></i> استبدال
+                        <input type="file" class="hidden" accept="${this.DESIGN_ACCEPT}" onchange="ProductCatalog.onDesignFileSelect(this)">
+                    </label>
+                    <button type="button" onclick="ProductCatalog.clearDesignFile()" class="text-[10px] text-red-600 font-bold px-2 py-1 rounded-lg hover:bg-red-50">حذف</button>
+                </div>
+            </div>` : '';
+        const labelHtml = showLabel
+            ? `<label class="block text-sm font-bold text-gray-800 mb-2"><i class="fas fa-palette text-accent ml-1"></i> ${this._esc(label)} <span class="text-gray-400 font-normal text-xs">(اختياري)</span></label>`
+            : '';
+        return `<div class="${showLabel ? 'border-t border-gray-200 pt-4 mt-4' : ''} mb-2">
+            ${labelHtml}
+            <label class="cursor-pointer block border-2 border-dashed border-gray-200 hover:border-accent/50 rounded-xl p-4 text-center transition bg-gray-50/50 hover:bg-accent/5">
+                <i class="fas fa-cloud-arrow-up text-accent text-xl mb-1 block"></i>
+                <span class="text-xs font-bold text-gray-600">${has ? 'اضغط لرفع ملف آخر' : 'اضغط لرفع PDF أو صورة أو ملف تصميم'}</span>
+                <span class="block text-[10px] text-gray-400 mt-1">PDF · PNG · JPG · PSD · AI · CDR · ZIP</span>
+                <input type="file" id="catDesignFileInput" accept="${this.DESIGN_ACCEPT}" onchange="ProductCatalog.onDesignFileSelect(this)" class="hidden">
+            </label>
+            <div id="catDesignFilePreview">${preview}</div>
+        </div>`;
+    },
+
     _renderStampDesignSection() {
         const isFile = this._stampDesignTab === 'file';
+        const fileBlock = isFile ? this._renderDesignSection(null) : '';
         return `<div class="border-t border-gray-200 pt-4 mb-4">
             <label class="block text-sm font-bold text-gray-800 mb-2"><i class="fas fa-stamp text-accent ml-1"></i> تصميم الختم</label>
             <div class="flex gap-2 mb-3">
@@ -1332,11 +1513,7 @@ const ProductCatalog = {
                 <button type="button" id="catStampTabText" onclick="ProductCatalog.setStampDesignTab('text')"
                     class="flex-1 py-2 rounded-lg text-xs font-bold border-2 ${!isFile ? 'border-accent bg-accent text-white' : 'border-gray-200 text-gray-600'}">نص الختم</button>
             </div>
-            <div id="catStampFileSection" class="${isFile ? '' : 'hidden-section'}">
-                <input type="file" id="catDesignFileInput" accept=".pdf,.psd,.ai,.cdr,.png,.jpg,.jpeg" onchange="ProductCatalog.onDesignFileSelect(this)"
-                    class="w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-accent/10 file:text-accent file:font-bold file:cursor-pointer">
-                <div id="catDesignFilePreview" class="mt-2 text-xs text-green-600"></div>
-            </div>
+            <div id="catStampFileSection" class="${isFile ? '' : 'hidden-section'}">${fileBlock}</div>
             <div id="catStampTextSection" class="${!isFile ? '' : 'hidden-section'}">
                 <textarea id="catStampDesignText" rows="3" oninput="ProductCatalog.onStampDesignTextInput()"
                     placeholder="اكتب نص الختم المطلوب..." class="w-full border border-gray-300 p-3 rounded-xl focus:border-accent outline-none text-sm resize-none"></textarea>
@@ -1353,50 +1530,41 @@ const ProductCatalog = {
         this._setConfigModalLuxury(true);
         body.innerHTML = `
             ${this._renderStampNotes(sub)}
-            ${sub.stampTypes ? this._renderStampTypeSection(sub) : ''}
-            <div id="stampDynamicSections">
-                ${sub.stampTypes ? this._renderStampSizeSection(sub) + this._renderStampVariantSection(sub) : ''}
-                ${sub.items ? this._renderStampItemSection(sub) + this._renderStampManualPriceSection(sub) : ''}
-            </div>
+            <div id="stampPickersWrap">${this._renderStampPickersAccordion(sub)}</div>
             <div class="form-group-catalog mt-4">
                 <label class="block text-sm font-bold text-gray-800 mb-1">الكمية <span class="text-red-500">*</span></label>
                 <input type="number" id="catStampQuantity" min="1" step="1" value="${this._stampSel.quantity || 1}"
                     oninput="ProductCatalog.onStampQuantityInput()" class="w-full border border-gray-300 p-3 rounded-xl focus:border-accent outline-none text-sm">
             </div>
+            ${this._renderStampDesignSection()}
             <div id="catalogPricePreview" class="bg-gradient-to-l from-accent/5 to-primary/5 border border-accent/20 rounded-2xl p-4 mt-4"></div>
         `;
         this.updateStampPreview();
     },
 
-    _refreshStampDynamicSections() {
-        const sub = this._currentStampSub;
-        const wrap = document.getElementById('stampDynamicSections');
-        if (!wrap || !sub) return;
-        if (sub.stampTypes) {
-            wrap.innerHTML = this._renderStampSizeSection(sub) + this._renderStampVariantSection(sub);
-        } else if (sub.items) {
-            wrap.innerHTML = this._renderStampItemSection(sub) + this._renderStampManualPriceSection(sub);
-        }
-    },
-
     onStampSelect(field, value) {
+        const sub = this._currentStampSub;
         this._stampSel[field] = value;
         if (field === 'stampType') {
-            const sub = this._currentStampSub;
-            const st = StampPricing.getStampType(sub, value);
-            const first = st?.sizes?.[0];
-            this._stampSel.size = first?.id || '';
-            this._stampSel.variant = first?.variants?.[0]?.id || '';
+            this._stampSel.size = '';
+            this._stampSel.variant = '';
             this._stampSel.customSize = '';
         }
         if (field === 'size') {
-            const sub = this._currentStampSub;
-            const st = StampPricing.getStampType(sub, this._stampSel.stampType);
-            const sz = StampPricing.getSize(st, value);
-            this._stampSel.variant = sz?.variants?.[0]?.id || '';
+            this._stampSel.variant = '';
             if (value !== 'custom') this._stampSel.customSize = '';
         }
-        this._refreshStampDynamicSections();
+        if (sub) {
+            const steps = this._getStampPickerSteps(sub);
+            const idx = steps.findIndex(s => s.field === field);
+            const next = steps[idx + 1];
+            if (next && this._isStampPickerEnabled(sub, next.field)) {
+                this._stampOpenPicker = next.field;
+            } else {
+                this._stampOpenPicker = null;
+            }
+        }
+        this._refreshStampPickers();
         this.updateStampPreview();
     },
 
@@ -1547,6 +1715,7 @@ const ProductCatalog = {
             pendingPricing: calc.pendingPricing || false
         };
         Object.keys(orderProduct.catalogSpecs).forEach(k => { if (!orderProduct.catalogSpecs[k]) delete orderProduct.catalogSpecs[k]; });
+        this._applyDesignToOrderProduct(orderProduct);
 
         OrderProducts.addProduct(orderProduct);
         closeModal('catalogProductConfigModal');
@@ -1622,6 +1791,7 @@ const ProductCatalog = {
         body.innerHTML = `
             ${fixedHtml}
             <div class="space-y-4 mb-4">${fieldsHtml}</div>
+            ${this._renderDesignSection()}
             <div id="catalogPricePreview" class="bg-gradient-to-l from-accent/5 to-primary/5 border border-accent/20 rounded-2xl p-4"></div>
         `;
         this.updatePricePreview();
@@ -1649,29 +1819,79 @@ const ProductCatalog = {
         }
     },
 
+    clearDesignFile() {
+        this._designFile = { url: '', name: '', data: '', mime: '' };
+        const input = document.getElementById('catDesignFileInput');
+        if (input) input.value = '';
+        const preview = document.getElementById('catDesignFilePreview');
+        if (preview) preview.innerHTML = '';
+        const stampSec = document.getElementById('catStampFileSection');
+        if (stampSec && this._stampDesignTab === 'file') {
+            stampSec.innerHTML = this._renderDesignSection('تصميم الختم');
+        }
+        const body = document.getElementById('catalogConfigBody');
+        if (body && !this._currentStampSub) {
+            const designWrap = body.querySelector('#catDesignFilePreview')?.closest('.border-t');
+            if (designWrap) {
+                const idx = Array.from(body.children).indexOf(designWrap);
+                if (idx >= 0) {
+                    const tmp = document.createElement('div');
+                    tmp.innerHTML = this._renderDesignSection();
+                    body.replaceChild(tmp.firstElementChild, designWrap);
+                }
+            }
+        }
+    },
+
+    _applyDesignToOrderProduct(orderProduct) {
+        const df = this._designFile;
+        if (df?.url) {
+            const draftRef = typeof DesignFileStore !== 'undefined'
+                ? DesignFileStore.makeDraftRef(orderProduct.id)
+                : null;
+            if (draftRef && typeof DesignFileStore !== 'undefined') {
+                DesignFileStore.save(draftRef, df.url, df.name || 'ملف التصميم', df.mime || '');
+                orderProduct.designFileRef = draftRef;
+            }
+            orderProduct.designFileUrl = df.url;
+            orderProduct.designFileName = df.name || 'ملف التصميم';
+            orderProduct.designFileMime = df.mime || '';
+            orderProduct.hasDesignFile = true;
+        }
+        const stampText = document.getElementById('catStampDesignText')?.value?.trim();
+        if (stampText) orderProduct.stampDesignText = stampText;
+    },
+
     onDesignFileSelect(input) {
         const file = input.files?.[0];
-        const preview = document.getElementById('catDesignFilePreview');
-        if (!file) {
-            this._designFile = { url: '', name: '', data: '' };
-            if (preview) preview.innerHTML = '';
-            return;
-        }
+        if (input) input.value = '';
+        if (!file) return;
         const ext = file.name.split('.').pop().toLowerCase();
         if (!this.ALLOWED_EXT.includes(ext)) {
-            Swal.fire('خطأ', 'امتداد الملف غير مسموح. المسموح: PDF, PSD, AI, CDR, PNG, JPG', 'error');
-            input.value = '';
+            Swal.fire('خطأ', 'نوع الملف غير مدعوم. المسموح: PDF، صور، PSD، AI، CDR، ZIP وغيرها', 'error');
             return;
         }
-        if (file.size > 500 * 1024) {
-            Swal.fire('تنبيه', 'الملف كبير وقد يبطّئ النظام. استخدم «رابط ملف» بدلاً من الرفع (الحد 500 كيلو).', 'warning');
-            input.value = '';
+        if (file.size > this.DESIGN_MAX_BYTES) {
+            Swal.fire('تنبيه', 'حجم الملف كبير (الحد 50 ميجا). جرّب ملف أصغر.', 'warning');
             return;
         }
         const reader = new FileReader();
         reader.onload = (e) => {
-            this._designFile = { url: e.target.result, name: file.name, data: '' };
-            if (preview) preview.innerHTML = `<i class="fas fa-check-circle ml-1"></i> ${this._esc(file.name)}`;
+            this._designFile = { url: e.target.result, name: file.name, data: '', mime: file.type || '' };
+            const preview = document.getElementById('catDesignFilePreview');
+            if (preview) {
+                preview.innerHTML = `
+                    <div class="flex items-center justify-between gap-2 mt-3 p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
+                        <span class="text-xs text-emerald-800 font-bold truncate"><i class="fas fa-file-circle-check ml-1"></i> ${this._esc(file.name)}</span>
+                        <div class="flex gap-1 shrink-0">
+                            <label class="text-[10px] text-blue-700 font-bold px-2 py-1 rounded-lg hover:bg-blue-50 cursor-pointer">
+                                <i class="fas fa-rotate ml-1"></i> استبدال
+                                <input type="file" class="hidden" accept="${this.DESIGN_ACCEPT}" onchange="ProductCatalog.onDesignFileSelect(this)">
+                            </label>
+                            <button type="button" onclick="ProductCatalog.clearDesignFile()" class="text-[10px] text-red-600 font-bold px-2 py-1 rounded-lg hover:bg-red-50">حذف</button>
+                        </div>
+                    </div>`;
+            }
         };
         reader.readAsDataURL(file);
     },
@@ -1841,6 +2061,7 @@ const ProductCatalog = {
             designFileName: '',
             hasDesignFile: false
         };
+        this._applyDesignToOrderProduct(orderProduct);
 
         if (product.catalogType === 'group_item') {
             orderProduct.catalogGroupId = product.parentGroupId;
@@ -2064,17 +2285,38 @@ const ProductCatalog = {
 };
 
 /** Open design file from product or order item */
-function openProductDesignFile(product) {
+async function openProductDesignFile(product) {
     if (!product) return;
-    const url = product.designFileUrl || product.designFileData || '';
+    let url = typeof resolveProductDesignUrl === 'function'
+        ? resolveProductDesignUrl(product)
+        : (product.designFileUrl || product.designFileData || '');
+    if (!url && typeof resolveProductDesignUrlAsync === 'function') {
+        url = await resolveProductDesignUrlAsync(product);
+    }
     if (!url) {
         Swal.fire('تنبيه', 'لا يوجد ملف تصميم مرفق', 'info');
         return;
     }
     if (url.startsWith('data:')) {
+        const mime = (product.designFileMime || url.split(';')[0].replace('data:', '') || '').toLowerCase();
+        const fname = product.designFileName || 'design-file';
+        if (mime.startsWith('image/') || mime === 'application/pdf' || fname.match(/\.(png|jpe?g|gif|webp|bmp|svg|pdf)$/i)) {
+            const w = window.open('', '_blank');
+            if (w) {
+                const safeUrl = url.replace(/"/g, '&quot;');
+                const safeName = fname.replace(/</g, '&lt;');
+                if (mime === 'application/pdf' || fname.toLowerCase().endsWith('.pdf')) {
+                    w.document.write(`<!DOCTYPE html><html dir="rtl"><head><meta charset="utf-8"><title>${safeName}</title><style>body{margin:0}iframe{width:100vw;height:100vh;border:0}</style></head><body><iframe src="${safeUrl}"></iframe></body></html>`);
+                } else {
+                    w.document.write(`<!DOCTYPE html><html dir="rtl"><head><meta charset="utf-8"><title>${safeName}</title><style>body{margin:0;background:#111;display:flex;align-items:center;justify-content:center;min-height:100vh}img{max-width:100%;max-height:100vh}</style></head><body><img src="${safeUrl}" alt="design"></body></html>`);
+                }
+                w.document.close();
+                return;
+            }
+        }
         const a = document.createElement('a');
         a.href = url;
-        a.download = product.designFileName || 'design-file';
+        a.download = fname;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);

@@ -1,6 +1,10 @@
 // ==========================================
 // Shipping Module - الشحن
 // ==========================================
+const DEFAULT_SHIPPING_CARRIERS = [
+    { id: 'carrier_samir', name: 'شركة شحن سمير', type: 'company', phone: '', active: true }
+];
+
 const ShippingModule = {
     _carriers: [],
     _loaded: false,
@@ -8,8 +12,23 @@ const ShippingModule = {
     // ---------- Firestore ----------
     _col() { return Branch.getCollection('shipping_carriers'); },
 
+    async ensureDefaultCarriers() {
+        for (const def of DEFAULT_SHIPPING_CARRIERS) {
+            const exists = this._carriers.some(c =>
+                c.id === def.id || (c.name && c.name.trim() === def.name)
+            );
+            if (exists) continue;
+            try {
+                await this.addCarrier({ ...def, createdAt: new Date().toISOString() });
+            } catch (e) {
+                console.warn('Seed carrier failed:', def.name, e);
+            }
+        }
+    },
+
     async init() {
         await this.load();
+        await this.ensureDefaultCarriers();
         return this._carriers;
     },
 
@@ -72,6 +91,30 @@ const ShippingModule = {
         return (AppState.orders || []).filter(o => o.isShipping);
     },
 
+    _getShipmentSortTime(o) {
+        if (o.shippedAt) return new Date(o.shippedAt).getTime();
+        if (o.status === 'shipped' || o.status === 'delivered') {
+            if (o.deliveredAt) return new Date(o.deliveredAt).getTime();
+            if (o.editedAt) return new Date(o.editedAt).getTime();
+        }
+        if (o.editedAt) return new Date(o.editedAt).getTime();
+        if (o.createdAt) return new Date(o.createdAt).getTime();
+        return o.id || 0;
+    },
+
+    _sortShipments(orders) {
+        if (this._shipmentSort === 'status') {
+            const rank = { 'pending': 0, 'in_design': 1, 'in_progress': 2, 'in_printing_house': 2, 'printing': 2, 'ready_at_branch': 3, 'ready': 3, 'shipped': 4, 'delivered': 5, 'cancelled': 6 };
+            return [...orders].sort((a, b) => (rank[a.status] || 0) - (rank[b.status] || 0));
+        }
+        return [...orders].sort((a, b) => this._getShipmentSortTime(b) - this._getShipmentSortTime(a));
+    },
+
+    setShipmentSort(mode) {
+        this._shipmentSort = mode;
+        this.render();
+    },
+
     // Stats
     getStats() {
         const orders = this.getShippingOrders();
@@ -90,10 +133,7 @@ const ShippingModule = {
 
         const stats = this.getStats();
         const carriers = this._carriers;
-        const allShippingOrders = this.getShippingOrders().sort((a, b) => {
-            const order = { 'pending': 0, 'in_design': 1, 'in_progress': 2, 'ready_at_branch': 3, 'shipped': 4, 'delivered': 5, 'cancelled': 6 };
-            return (order[a.status] || 0) - (order[b.status] || 0);
-        });
+        const allShippingOrders = this._sortShipments(this.getShippingOrders());
         const totalShipping = allShippingOrders.length;
         const shippingOrders = this._searchQuery
             ? allShippingOrders.filter(o => this._matchesSearch(o, this._searchQuery))
@@ -134,15 +174,28 @@ const ShippingModule = {
             </div>
         </div>`;
 
-        // Tabs
+        // Tabs + sort
+        const sortRecent = this._shipmentSort !== 'status';
         html += `
-        <div class="flex gap-2 mb-5">
-            <button onclick="ShippingModule._tab='orders';ShippingModule.render()" class="px-4 py-2 rounded-xl text-sm font-bold transition ${this._tab !== 'carriers' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}">
-                <i class="fas fa-boxes-stacked ml-1"></i> الشحنات
-            </button>
-            <button onclick="ShippingModule._tab='carriers';ShippingModule.render()" class="px-4 py-2 rounded-xl text-sm font-bold transition ${this._tab === 'carriers' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}">
-                <i class="fas fa-building ml-1"></i> شركات/مندوبين الشحن
-            </button>
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+            <div class="flex gap-2 flex-wrap">
+                <button onclick="ShippingModule._tab='orders';ShippingModule.render()" class="px-4 py-2 rounded-xl text-sm font-bold transition ${this._tab !== 'carriers' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}">
+                    <i class="fas fa-boxes-stacked ml-1"></i> الشحنات
+                </button>
+                <button onclick="ShippingModule._tab='carriers';ShippingModule.render()" class="px-4 py-2 rounded-xl text-sm font-bold transition ${this._tab === 'carriers' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}">
+                    <i class="fas fa-building ml-1"></i> شركات/مندوبين الشحن
+                </button>
+            </div>
+            ${this._tab !== 'carriers' ? `
+            <div class="flex items-center gap-2 flex-wrap">
+                <span class="text-[11px] font-bold text-gray-400 hidden sm:inline"><i class="fas fa-sort ml-1"></i> الفرز:</span>
+                <button onclick="ShippingModule.setShipmentSort('recent_shipped')" class="px-3 py-2 rounded-xl text-xs font-bold transition ${sortRecent ? 'bg-indigo-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}">
+                    <i class="fas fa-clock-rotate-left ml-1"></i> آخر شحن أولاً
+                </button>
+                <button onclick="ShippingModule.setShipmentSort('status')" class="px-3 py-2 rounded-xl text-xs font-bold transition ${!sortRecent ? 'bg-indigo-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}">
+                    <i class="fas fa-layer-group ml-1"></i> حسب الحالة
+                </button>
+            </div>` : ''}
         </div>`;
 
         if (this._tab === 'carriers') {
@@ -156,6 +209,7 @@ const ShippingModule = {
 
     _tab: 'orders',
     _searchQuery: '',
+    _shipmentSort: 'recent_shipped',
 
     _matchesSearch(order, query) {
         if (!query) return true;
@@ -296,7 +350,7 @@ const ShippingModule = {
     _shipmentStatus(order) {
         const s = order.status;
         if (s === 'delivered') return '<span class="status-badge status-delivered"><i class="fas fa-check-double"></i> تم التسليم</span>';
-        if (s === 'shipped') return '<span class="status-badge status-shipped"><i class="fas fa-truck-fast"></i> في الطريق</span>';
+        if (s === 'shipped') return '<span class="status-badge status-shipped"><i class="fas fa-truck-fast"></i> قيد الشحن</span>';
         if (s === 'cancelled') return '<span class="status-badge status-cancelled"><i class="fas fa-ban"></i> ملغي</span>';
         if (s === 'ready_at_branch' || s === 'ready') return '<span class="status-badge status-ready"><i class="fas fa-check"></i> جاهز للشحن</span>';
         return '<span class="status-badge status-pending"><i class="fas fa-clock"></i> قيد التجهيز</span>';

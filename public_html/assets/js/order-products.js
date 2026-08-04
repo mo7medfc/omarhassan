@@ -1,7 +1,562 @@
+// Local store for design files — IndexedDB for large files, keeps Firestore docs small
+const DesignFileStore = {
+    KEY_PREFIX: 'oh_design_',
+    DB_NAME: 'oh_design_files_v1',
+    STORE: 'files',
+    _cache: new Map(),
+    _dbPromise: null,
+
+    _key(ref) { return this.KEY_PREFIX + ref; },
+
+    makeRef(orderId, productId) { return `${orderId}_${productId}`; },
+
+    makeDraftRef(productId) { return `draft_${productId}`; },
+
+    _record(dataUrl, name, mime) {
+        return { url: dataUrl, name: name || 'design-file', mime: mime || '', at: Date.now() };
+    },
+
+    _openDb() {
+        if (this._dbPromise) return this._dbPromise;
+        this._dbPromise = new Promise((resolve, reject) => {
+            if (!window.indexedDB) { resolve(null); return; }
+            const req = indexedDB.open(this.DB_NAME, 1);
+            req.onupgradeneeded = () => { req.result.createObjectStore(this.STORE); };
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+        }).catch(() => null);
+        return this._dbPromise;
+    },
+
+    async _idbPut(ref, record) {
+        const db = await this._openDb();
+        if (!db) return false;
+        return new Promise((resolve) => {
+            const tx = db.transaction(this.STORE, 'readwrite');
+            tx.objectStore(this.STORE).put(record, ref);
+            tx.oncomplete = () => resolve(true);
+            tx.onerror = () => resolve(false);
+        });
+    },
+
+    async _idbGet(ref) {
+        const db = await this._openDb();
+        if (!db) return null;
+        return new Promise((resolve) => {
+            const tx = db.transaction(this.STORE, 'readonly');
+            const req = tx.objectStore(this.STORE).get(ref);
+            req.onsuccess = () => resolve(req.result || null);
+            req.onerror = () => resolve(null);
+        });
+    },
+
+    async _idbDelete(ref) {
+        const db = await this._openDb();
+        if (!db) return;
+        return new Promise((resolve) => {
+            const tx = db.transaction(this.STORE, 'readwrite');
+            tx.objectStore(this.STORE).delete(ref);
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => resolve();
+        });
+    },
+
+    save(ref, dataUrl, name, mime) {
+        if (!ref || !dataUrl) return false;
+        const record = this._record(dataUrl, name, mime);
+        this._cache.set(ref, record);
+        if (dataUrl.length < 3_500_000) {
+            try {
+                localStorage.setItem(this._key(ref), JSON.stringify(record));
+            } catch (e) { /* large file — IndexedDB only */ }
+        }
+        this._idbPut(ref, record);
+        return true;
+    },
+
+    get(ref) {
+        if (!ref) return null;
+        if (this._cache.has(ref)) return this._cache.get(ref);
+        try {
+            const raw = localStorage.getItem(this._key(ref));
+            if (raw) {
+                const data = JSON.parse(raw);
+                this._cache.set(ref, data);
+                return data;
+            }
+        } catch (e) { /* ignore */ }
+        return null;
+    },
+
+    async getAsync(ref) {
+        const cached = this.get(ref);
+        if (cached?.url) return cached;
+        const fromDb = await this._idbGet(ref);
+        if (fromDb?.url) {
+            this._cache.set(ref, fromDb);
+            return fromDb;
+        }
+        return null;
+    },
+
+    remove(ref) {
+        if (!ref) return;
+        this._cache.delete(ref);
+        try { localStorage.removeItem(this._key(ref)); } catch (e) { /* ignore */ }
+        this._idbDelete(ref);
+    },
+
+    migrateDraftToOrder(draftRef, orderRef) {
+        const data = this.get(draftRef);
+        if (!data) return false;
+        if (this.save(orderRef, data.url, data.name, data.mime)) {
+            this.remove(draftRef);
+            return true;
+        }
+        return false;
+    },
+
+    _applyStored(product, ref, stored) {
+        if (!stored?.url) return product;
+        product.designFileUrl = stored.url;
+        product.designFileName = product.designFileName || stored.name;
+        product.designFileMime = product.designFileMime || stored.mime;
+        product.designFileRef = ref;
+        product.hasDesignFile = true;
+        return product;
+    },
+
+    hydrateProduct(product, orderId) {
+        if (!product || typeof product !== 'object') return product;
+        if (product.designFileUrl && /^https?:\/\//i.test(product.designFileUrl)) {
+            product.hasDesignFile = true;
+            return product;
+        }
+        if (product.designFileUrl || product.designFileData) {
+            product.hasDesignFile = true;
+            return product;
+        }
+        const ref = product.designFileRef
+            || (orderId && product.id ? this.makeRef(orderId, product.id) : (product.id ? this.makeDraftRef(product.id) : null));
+        if (!ref) return product;
+        return this._applyStored(product, ref, this.get(ref));
+    },
+
+    async hydrateProductAsync(product, orderId) {
+        if (!product || typeof product !== 'object') return product;
+        if (product.designFileUrl && /^https?:\/\//i.test(product.designFileUrl)) {
+            product.hasDesignFile = true;
+            return product;
+        }
+        if (product.designFileUrl || product.designFileData) {
+            product.hasDesignFile = true;
+            return product;
+        }
+        const ref = product.designFileRef
+            || (orderId && product.id ? this.makeRef(orderId, product.id) : (product.id ? this.makeDraftRef(product.id) : null));
+        if (!ref) return product;
+        const stored = await this.getAsync(ref);
+        return this._applyStored(product, ref, stored);
+    }
+};
+
+function productHasDesignFile(product) {
+    return !!(product && (product.hasDesignFile || product.designFileUrl || product.designFileData || product.designFileRef || product.designStoragePath));
+}
+
+function resolveProductDesignUrl(product) {
+    if (!product) return '';
+    if (product.designFileUrl && /^https?:\/\//i.test(product.designFileUrl)) return product.designFileUrl;
+    if (product.designFileUrl) return product.designFileUrl;
+    if (product.designFileData) return product.designFileData;
+    if (product.designFileRef) {
+        const stored = DesignFileStore.get(product.designFileRef);
+        if (stored?.url) return stored.url;
+    }
+    if (product.id) {
+        const stored = DesignFileStore.get(DesignFileStore.makeDraftRef(product.id));
+        if (stored?.url) return stored.url;
+    }
+    return '';
+}
+
+async function resolveProductDesignUrlAsync(product) {
+    const sync = resolveProductDesignUrl(product);
+    if (sync) return sync;
+    if (product?.designFileRef) {
+        const stored = await DesignFileStore.getAsync(product.designFileRef);
+        if (stored?.url) return stored.url;
+    }
+    if (product?.id) {
+        const stored = await DesignFileStore.getAsync(DesignFileStore.makeDraftRef(product.id));
+        if (stored?.url) return stored.url;
+    }
+    return '';
+}
+
+// تخزين سحابي مزدوج: Supabase (أساسي 1GB) → Cloudflare R2 (احتياطي 10GB)
+const DesignCloudStore = {
+    PREFER_R2_KEY: 'oh_design_prefer_r2',
+
+    _bucket() {
+        return window.supabaseConfig?.bucket || 'designs';
+    },
+
+    getClient() {
+        return window.supabaseClient || null;
+    },
+
+    _apiKey() {
+        const cfg = window.supabaseConfig || {};
+        return cfg.publishableKey || cfg.anonKey || '';
+    },
+
+    _r2WorkerUrl() {
+        const url = (window.r2Config?.workerUrl || '').trim();
+        return url ? url.replace(/\/$/, '') : '';
+    },
+
+    isSupabaseReady() {
+        return !!(this.getClient() && window.supabaseConfig?.url && this._apiKey());
+    },
+
+    isR2Ready() {
+        return !!this._r2WorkerUrl();
+    },
+
+    isReady() {
+        return this.isSupabaseReady() || this.isR2Ready();
+    },
+
+    getStorage() {
+        return this.isReady() ? this : null;
+    },
+
+    _preferR2() {
+        try { return localStorage.getItem(this.PREFER_R2_KEY) === '1'; } catch (e) { return false; }
+    },
+
+    _setPreferR2() {
+        try { localStorage.setItem(this.PREFER_R2_KEY, '1'); } catch (e) { /* ignore */ }
+    },
+
+    _isQuotaError(msg) {
+        return /quota|limit exceeded|storage full|storage quota|exceeded.*limit|413|too large|maximum.*size|507|bucket.*full/i.test(msg || '');
+    },
+
+    _sanitizeFileName(name) {
+        return (name || 'design-file').replace(/[^\w.\-()\u0600-\u06FF]+/g, '_').slice(0, 120);
+    },
+
+    draftPath(productId, fileName) {
+        return `drafts/${productId}/${Date.now()}_${this._sanitizeFileName(fileName)}`;
+    },
+
+    orderPath(orderId, productId, fileName) {
+        return `orders/${orderId}/${productId}_${this._sanitizeFileName(fileName)}`;
+    },
+
+    _applyUploadToProduct(product, result, meta) {
+        product.designFileUrl = result.url;
+        product.designStoragePath = result.storagePath;
+        product.designStorageProvider = result.provider || 'supabase';
+        product.designFileName = meta?.name || product.designFileName || 'design-file';
+        product.designFileMime = meta?.mime || product.designFileMime || '';
+        product.hasDesignFile = true;
+        delete product.designFileRef;
+        return product;
+    },
+
+    _edgeFunctionUrl() {
+        const base = window.supabaseConfig?.url || '';
+        return base ? `${base.replace(/\/$/, '')}/functions/v1/design-files` : '';
+    },
+
+    async _uploadViaEdgeFunction(blob, storagePath, mime) {
+        const endpoint = this._edgeFunctionUrl();
+        const apiKey = this._apiKey();
+        if (!endpoint || !apiKey) throw new Error('Edge Function غير متاح');
+        const form = new FormData();
+        form.append('path', storagePath);
+        form.append('file', blob, blob.name || 'design-file');
+        const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { apikey: apiKey, Authorization: `Bearer ${apiKey}` },
+            body: form
+        });
+        const payload = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(payload.error || 'فشل رفع الملف عبر Edge Function');
+        return { url: payload.url, storagePath: payload.storagePath || storagePath, provider: 'supabase' };
+    },
+
+    async _uploadSupabase(blob, storagePath, mime) {
+        const client = this.getClient();
+        if (!client) throw new Error('Supabase غير مُعدّ');
+        const bucket = this._bucket();
+        const { error } = await client.storage.from(bucket).upload(storagePath, blob, {
+            contentType: mime || blob.type || 'application/octet-stream',
+            upsert: true
+        });
+        if (error) {
+            const msg = error.message || '';
+            if (/row-level security|policy/i.test(msg)) {
+                return this._uploadViaEdgeFunction(blob, storagePath, mime);
+            }
+            throw new Error(msg);
+        }
+        const { data } = client.storage.from(bucket).getPublicUrl(storagePath);
+        return { url: data.publicUrl, storagePath, provider: 'supabase' };
+    },
+
+    async _uploadR2(blob, storagePath, mime) {
+        const worker = this._r2WorkerUrl();
+        if (!worker) throw new Error('Cloudflare R2 غير مُعدّ — ضع workerUrl في r2Config');
+        const form = new FormData();
+        form.append('path', storagePath);
+        form.append('file', blob, blob.name || 'design-file');
+        const res = await fetch(`${worker}/upload`, { method: 'POST', body: form });
+        const payload = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(payload.error || 'فشل رفع الملف إلى R2');
+        let url = payload.url || '';
+        if (!url && window.r2Config?.publicBaseUrl) {
+            url = `${window.r2Config.publicBaseUrl.replace(/\/$/, '')}/${storagePath}`;
+        }
+        return { url, storagePath: payload.storagePath || storagePath, provider: 'r2' };
+    },
+
+    async uploadBlob(blob, storagePath, mime) {
+        const useR2First = this._preferR2();
+        const canSupabase = this.isSupabaseReady();
+        const canR2 = this.isR2Ready();
+
+        if (!canSupabase && !canR2) {
+            throw new Error('التخزين السحابي غير مُعدّ (Supabase أو R2)');
+        }
+
+        const trySupabaseThenR2 = async () => {
+            if (!canSupabase) return this._uploadR2(blob, storagePath, mime);
+            try {
+                return await this._uploadSupabase(blob, storagePath, mime);
+            } catch (e) {
+                if (canR2 && this._isQuotaError(e.message)) {
+                    this._setPreferR2();
+                    return this._uploadR2(blob, storagePath, mime);
+                }
+                throw e;
+            }
+        };
+
+        if (useR2First && canR2) {
+            try {
+                return await this._uploadR2(blob, storagePath, mime);
+            } catch (e) {
+                if (canSupabase) return trySupabaseThenR2();
+                throw e;
+            }
+        }
+        return trySupabaseThenR2();
+    },
+
+    async dataUrlToBlob(dataUrl) {
+        const res = await fetch(dataUrl);
+        return res.blob();
+    },
+
+    async uploadDataUrl(dataUrl, fileName, mime, storagePath) {
+        const blob = await this.dataUrlToBlob(dataUrl);
+        return this.uploadBlob(blob, storagePath, mime);
+    },
+
+    async uploadFileForProduct(product, file, orderId) {
+        if (!product?.id) throw new Error('معرّف الصنف غير موجود');
+        const path = orderId
+            ? this.orderPath(orderId, product.id, file.name)
+            : this.draftPath(product.id, file.name);
+        const result = await this.uploadBlob(file, path, file.type || '');
+        return this._applyUploadToProduct(product, result, { name: file.name, mime: file.type || '' });
+    },
+
+    _isCloudUrl(url) {
+        return !!(url && /^https?:\/\//i.test(url) && !url.startsWith('data:'));
+    },
+
+    async ensureProductCloud(product, orderId) {
+        if (!product || !productHasDesignFile(product)) return product;
+        if (this._isCloudUrl(product.designFileUrl)) {
+            product.hasDesignFile = true;
+            return product;
+        }
+
+        let dataUrl = product.designFileUrl || product.designFileData || '';
+        let name = product.designFileName || 'design-file';
+        let mime = product.designFileMime || '';
+
+        if (!dataUrl || !dataUrl.startsWith('data:')) {
+            dataUrl = await resolveProductDesignUrlAsync(product);
+            if (!name || name === 'design-file') {
+                const stored = product.designFileRef
+                    ? await DesignFileStore.getAsync(product.designFileRef)
+                    : (product.id ? await DesignFileStore.getAsync(DesignFileStore.makeDraftRef(product.id)) : null);
+                if (stored) {
+                    name = stored.name || name;
+                    mime = stored.mime || mime;
+                }
+            }
+        }
+
+        if (!dataUrl) return product;
+        if (this._isCloudUrl(dataUrl)) {
+            product.designFileUrl = dataUrl;
+            product.hasDesignFile = true;
+            return product;
+        }
+
+        const path = orderId && product.id
+            ? this.orderPath(orderId, product.id, name)
+            : this.draftPath(product.id, name);
+        const result = await this.uploadDataUrl(dataUrl, name, mime, path);
+        return this._applyUploadToProduct(product, result, { name, mime });
+    },
+
+    async ensureProductsCloud(products, orderId) {
+        const out = [];
+        for (const p of (products || [])) {
+            out.push(await this.ensureProductCloud({ ...p }, orderId));
+        }
+        return out;
+    },
+
+    async deletePath(storagePath, provider) {
+        if (!storagePath) return;
+        const p = provider || 'supabase';
+        try {
+            if (p === 'r2' && this.isR2Ready()) {
+                await fetch(`${this._r2WorkerUrl()}/delete?path=${encodeURIComponent(storagePath)}`, { method: 'DELETE' });
+                return;
+            }
+            const client = this.getClient();
+            if (client) await client.storage.from(this._bucket()).remove([storagePath]);
+        } catch (e) { console.warn('DesignCloudStore delete:', e); }
+    }
+};
+
 // Order Products Module - Manages products in an order
 const OrderProducts = {
     currentProducts: [], // Array of products in current order
     currentProductType: null, // Product type being configured
+    DESIGN_ALLOWED_EXT: ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg', 'psd', 'ai', 'cdr', 'eps', 'tif', 'tiff', 'zip', 'rar', 'doc', 'docx'],
+    DESIGN_MAX_BYTES: 50 * 1024 * 1024,
+    DESIGN_ACCEPT: '.pdf,.png,.jpg,.jpeg,.gif,.webp,.bmp,.svg,.psd,.ai,.cdr,.eps,.tif,.tiff,.zip,.rar,.doc,.docx,image/*,application/pdf',
+
+    _findProduct(productId) {
+        if (typeof Orders !== 'undefined' && Orders.isEditingOrder && Array.isArray(Orders.editingProducts)) {
+            const p = Orders.editingProducts.find(x => x.id == productId);
+            if (p) return p;
+        }
+        return this.currentProducts.find(p => p.id == productId);
+    },
+
+    _isDesignExtAllowed(filename) {
+        const ext = (filename || '').split('.').pop().toLowerCase();
+        return this.DESIGN_ALLOWED_EXT.includes(ext);
+    },
+
+    _readDesignFile(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve({
+                url: e.target.result,
+                name: file.name,
+                mime: file.type || ''
+            });
+            reader.onerror = () => reject(new Error('فشل قراءة الملف'));
+            reader.readAsDataURL(file);
+        });
+    },
+
+    async uploadProductDesign(productId, input) {
+        const file = input?.files?.[0];
+        if (input) input.value = '';
+        if (!file) return;
+        if (!this._isDesignExtAllowed(file.name)) {
+            Swal.fire('خطأ', 'نوع الملف غير مدعوم. المسموح: PDF، صور، PSD، AI، CDR، ZIP وغيرها', 'error');
+            return;
+        }
+        if (file.size > this.DESIGN_MAX_BYTES) {
+            Swal.fire('تنبيه', 'حجم الملف كبير (الحد 50 ميجا). جرّب ملف أصغر.', 'warning');
+            return;
+        }
+        const product = this._findProduct(productId);
+        if (!product) return;
+        Swal.fire({ title: 'جاري رفع التصميم...', text: 'يتم حفظ الملف في السحابة', allowOutsideClick: false, showConfirmButton: false, didOpen: () => Swal.showLoading() });
+        try {
+            if (typeof DesignCloudStore !== 'undefined' && DesignCloudStore.getStorage()) {
+                await DesignCloudStore.uploadFileForProduct(product, file, null);
+            } else {
+                const data = await this._readDesignFile(file);
+                const draftRef = DesignFileStore.makeDraftRef(productId);
+                DesignFileStore.save(draftRef, data.url, data.name, data.mime);
+                product.designFileUrl = data.url;
+                product.designFileName = data.name;
+                product.designFileMime = data.mime;
+                product.designFileRef = draftRef;
+                product.hasDesignFile = true;
+            }
+            Swal.close();
+            this.renderProductsList();
+            if (typeof Orders !== 'undefined' && Orders.isEditingOrder && typeof Orders.renderEditProducts === 'function') {
+                Orders.renderEditProducts();
+            }
+        } catch (e) {
+            Swal.fire('خطأ', e.message || 'فشل رفع الملف', 'error');
+        }
+    },
+
+    async removeProductDesign(productId) {
+        const product = this._findProduct(productId);
+        if (!product) return;
+        if (product.designStoragePath && typeof DesignCloudStore !== 'undefined') {
+            await DesignCloudStore.deletePath(product.designStoragePath, product.designStorageProvider);
+        }
+        if (product.designFileRef) DesignFileStore.remove(product.designFileRef);
+        DesignFileStore.remove(DesignFileStore.makeDraftRef(productId));
+        product.designFileUrl = '';
+        product.designFileName = '';
+        product.designFileMime = '';
+        product.designFileRef = '';
+        product.designStoragePath = '';
+        product.designStorageProvider = '';
+        product.hasDesignFile = false;
+        this.renderProductsList();
+        if (typeof Orders !== 'undefined' && Orders.isEditingOrder && typeof Orders.renderEditProducts === 'function') {
+            Orders.renderEditProducts();
+        }
+    },
+
+    renderProductDesignControls(product) {
+        const hasDesign = productHasDesignFile(product);
+        const name = product.designFileName || '';
+        const inputId = `designInput_${product.id}`;
+        const downloadBtn = hasDesign
+            ? `<button type="button" onclick="openProductDesignFile(OrderProducts._findProduct(${product.id}))" class="text-[10px] bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-lg font-bold hover:bg-emerald-100 transition"><i class="fas fa-download ml-1"></i> تحميل التصميم</button>`
+            : '';
+        const removeBtn = hasDesign
+            ? `<button type="button" onclick="OrderProducts.removeProductDesign(${product.id})" class="text-[10px] bg-red-50 text-red-600 px-2 py-1 rounded-lg font-bold hover:bg-red-100 transition"><i class="fas fa-trash ml-1"></i> حذف</button>`
+            : '';
+        const safeName = (name || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+        const nameHtml = hasDesign && name
+            ? `<span class="text-[10px] text-gray-500 truncate max-w-[10rem]" title="${safeName}"><i class="fas fa-paperclip ml-1 text-accent"></i>${safeName}</span>`
+            : '';
+        return `<div class="mt-2 flex flex-wrap items-center gap-2">
+            <label class="cursor-pointer text-[10px] bg-blue-50 text-blue-700 px-2.5 py-1 rounded-lg font-bold hover:bg-blue-100 transition inline-flex items-center gap-1">
+                <i class="fas fa-cloud-arrow-up"></i> ${hasDesign ? 'تغيير الملف' : 'رفع تصميم'}
+                <input type="file" id="${inputId}" class="hidden" accept="${this.DESIGN_ACCEPT}" onchange="OrderProducts.uploadProductDesign(${product.id}, this)">
+            </label>
+            ${downloadBtn}
+            ${removeBtn}
+            ${nameHtml}
+        </div>`;
+    },
 
     // Initialize
     init() {
@@ -876,6 +1431,8 @@ const OrderProducts = {
             `;
             const totalSection = document.getElementById('orderTotalPrice');
             if (totalSection) totalSection.classList.add('hidden-section');
+            const discountSection = document.getElementById('orderDiscountSection');
+            if (discountSection) discountSection.classList.add('hidden-section');
             return;
         }
 
@@ -1032,9 +1589,10 @@ const OrderProducts = {
             const sellingPrice = (product.sellingPrice != null ? product.sellingPrice : product.price) || 0;
             const costPrice = product.productionCost != null ? product.productionCost : (product.calculation && product.calculation.productionCost != null ? product.calculation.productionCost : 0);
             const isAdmin = typeof App !== 'undefined' && AppState.currentUser && AppState.currentUser.role === 'admin';
-            const displayName = product.type === 'catalog' ? (product.productName || product.catalogName) : (productNames[product.type] || product.productName || product.type);
-            const hasDesign = product.hasDesignFile || product.designFileUrl;
-            const designBtn = hasDesign ? `<button type="button" onclick="openProductDesignFile(OrderProducts.currentProducts.find(p=>p.id==${product.id}))" class="mt-2 text-[10px] bg-amber-50 text-amber-700 px-2 py-1 rounded-lg font-bold hover:bg-amber-100 transition"><i class="fas fa-palette ml-1"></i> ملف التصميم</button>` : '';
+            const displayName = (product.type === 'custom' || product.isCustom)
+                ? (product.productName || 'صنف مخصص')
+                : (product.type === 'catalog' ? (product.productName || product.catalogName) : (productNames[product.type] || product.productName || product.type));
+            const designControls = this.renderProductDesignControls(product);
             const priceBlock = isAdmin
                 ? `<div class="text-sm space-y-1 mt-2"><div class="flex justify-between"><span class="text-gray-600">سعر التكلفة:</span><span class="font-bold text-blue-600">${Number(costPrice).toFixed(2)} ج.م</span></div><div class="flex justify-between"><span class="text-gray-600">سعر البيع:</span><span class="font-bold text-brandGold">${Number(sellingPrice).toFixed(2)} ج.م</span></div></div>`
                 : `<div class="font-bold text-brandGold text-lg mt-1">${Number(sellingPrice).toFixed(2)} ج.م</div>`;
@@ -1048,7 +1606,7 @@ const OrderProducts = {
                             </div>
                             <div class="text-sm text-gray-600 mb-2">${details}</div>
                             ${priceBlock}
-                            ${designBtn}
+                            ${designControls}
                         </div>
                         <button type="button" onclick="OrderProducts.removeProduct(${product.id})" class="text-red-500 hover:text-red-700 p-2">
                             <i class="fas fa-trash"></i>
@@ -1064,6 +1622,8 @@ const OrderProducts = {
 
         const totalSection = document.getElementById('orderTotalPrice');
         if (totalSection) totalSection.classList.remove('hidden-section');
+        const discountSection = document.getElementById('orderDiscountSection');
+        if (discountSection) discountSection.classList.remove('hidden-section');
         this.updateOrderTotal();
     },
 
@@ -1078,36 +1638,42 @@ const OrderProducts = {
         return this.currentProducts;
     },
 
-    // Get order total (products + shipping + design fee - discount)
-    getOrderTotal() {
-        const productsTotal = this.currentProducts.reduce((sum, p) => sum + (p.sellingPrice != null ? p.sellingPrice : p.price || 0), 0);
-        const shippingCheck = document.getElementById('shippingCheck');
-        const isShip = shippingCheck && shippingCheck.checked;
-        let shipCost = 0;
-        if (isShip) {
-            shipCost = parseFloat(document.getElementById('shippingCostInput')?.value) || 0;
+    _getModalShippingCost() {
+        const orderIsShipping = document.getElementById('orderIsShipping');
+        if (orderIsShipping && orderIsShipping.value === '1') {
+            return parseFloat(document.getElementById('orderShippingCost')?.value) || 0;
         }
-        const designFeeCheck = document.getElementById('designFeeCheck');
-        const designFee = (designFeeCheck && designFeeCheck.checked) ? (parseFloat(document.getElementById('designFeeAmount')?.value) || 0) : 0;
-        
-        const subtotal = productsTotal + shipCost + designFee;
-        
-        // Subtract discount
+        const shippingCheck = document.getElementById('shippingCheck');
+        if (shippingCheck && shippingCheck.checked) {
+            return parseFloat(document.getElementById('shippingCostInput')?.value) || 0;
+        }
+        return 0;
+    },
+
+    _getDiscountInfo(productsTotal) {
+        let discountPct = 0;
         let discountValue = 0;
         const discountCheck = document.getElementById('discountCheck');
         if (discountCheck && discountCheck.checked) {
-            const discountType = document.querySelector('input[name="discountType"]:checked');
-            if (discountType) {
-                if (discountType.value === 'percentage') {
-                    const pct = parseFloat(document.getElementById('discountPercentage')?.value) || 0;
-                    discountValue = (subtotal * pct) / 100;
-                } else {
-                    discountValue = parseFloat(document.getElementById('discountAmount')?.value) || 0;
-                    if (discountValue > subtotal) discountValue = subtotal;
-                }
+            discountPct = parseFloat(document.getElementById('discountPercentage')?.value) || 0;
+            if (discountPct > 0) {
+                discountValue = (productsTotal * discountPct) / 100;
+                if (discountValue > productsTotal) discountValue = productsTotal;
             }
         }
-        return Math.max(0, subtotal - discountValue);
+        return { discountPct, discountValue };
+    },
+
+    // Get order total (products + shipping + design fee - discount)
+    getOrderTotal() {
+        const productsTotal = this.currentProducts.reduce((sum, p) => sum + (p.sellingPrice != null ? p.sellingPrice : p.price || 0), 0);
+        const shipCost = this._getModalShippingCost();
+        const designFeeCheck = document.getElementById('designFeeCheck');
+        const designFee = (designFeeCheck && designFeeCheck.checked) ? (parseFloat(document.getElementById('designFeeAmount')?.value) || 0) : 0;
+        
+        const { discountValue } = this._getDiscountInfo(productsTotal);
+        const productsAfterDiscount = Math.max(0, productsTotal - discountValue);
+        return Math.max(0, productsAfterDiscount + shipCost + designFee);
     },
 
     // Update order total display and pricing summary
@@ -1120,45 +1686,37 @@ const OrderProducts = {
         const contentEl = document.getElementById('orderPricingContent');
         if (summarySection && contentEl) {
             const productsTotal = this.currentProducts.reduce((sum, p) => sum + (p.sellingPrice != null ? p.sellingPrice : p.price || 0), 0);
+            const { discountPct, discountValue } = this._getDiscountInfo(productsTotal);
             let html = `<div class="flex justify-between"><span>إجمالي المنتجات:</span><span class="font-bold">${productsTotal.toFixed(2)} ج.م</span></div>`;
             
             const designFeeCheck = document.getElementById('designFeeCheck');
             const designFee = (designFeeCheck && designFeeCheck.checked) ? (parseFloat(document.getElementById('designFeeAmount')?.value) || 0) : 0;
             if (designFee > 0) html += `<div class="flex justify-between"><span>تكلفة التصميم:</span><span class="font-bold">${designFee.toFixed(2)} ج.م</span></div>`;
             
-            const shippingCheck = document.getElementById('shippingCheck');
-            if (shippingCheck && shippingCheck.checked) {
-                const shipCost = parseFloat(document.getElementById('shippingCostInput')?.value) || 0;
-                if (shipCost > 0) {
-                    const govSelect = document.getElementById('governorateSelect');
-                    const govName = govSelect ? govSelect.options[govSelect.selectedIndex]?.text : '';
-                    html += `<div class="flex justify-between"><span>الشحن (${govName}):</span><span class="font-bold">${shipCost.toFixed(2)} ج.م</span></div>`;
-                }
+            const shipCost = this._getModalShippingCost();
+            if (shipCost > 0) {
+                const govSelect = document.getElementById('governorateSelect');
+                const govName = govSelect ? govSelect.options[govSelect.selectedIndex]?.text : '';
+                const shipLabel = govName ? `الشحن (${govName})` : 'تكلفة الشحن';
+                html += `<div class="flex justify-between"><span>${shipLabel}:</span><span class="font-bold">${shipCost.toFixed(2)} ج.م</span></div>`;
             }
             
-            // Show discount
-            const discountCheck = document.getElementById('discountCheck');
-            if (discountCheck && discountCheck.checked) {
-                const discountType = document.querySelector('input[name="discountType"]:checked');
-                if (discountType) {
-                    let discountValue = 0;
-                    const subtotal = productsTotal + designFee + (shippingCheck && shippingCheck.checked ? (parseFloat(document.getElementById('shippingCostInput')?.value) || 0) : 0);
-                    if (discountType.value === 'percentage') {
-                        const pct = parseFloat(document.getElementById('discountPercentage')?.value) || 0;
-                        discountValue = (subtotal * pct) / 100;
-                    } else {
-                        discountValue = parseFloat(document.getElementById('discountAmount')?.value) || 0;
-                        if (discountValue > subtotal) discountValue = subtotal;
-                    }
-                    if (discountValue > 0) {
-                        html += `<div class="flex justify-between text-red-600"><span>الخصم:</span><span class="font-bold">- ${discountValue.toFixed(2)} ج.م</span></div>`;
-                    }
-                }
+            if (discountValue > 0) {
+                html += `<div class="flex justify-between text-red-600"><span>الخصم (${discountPct}%):</span><span class="font-bold">- ${discountValue.toFixed(2)} ج.م</span></div>`;
             }
             
             html += `<div class="flex justify-between pt-2 border-t border-gray-300"><span class="font-bold">الإجمالي:</span><span class="font-bold text-brandGold">${total.toFixed(2)} ج.م</span></div>`;
             contentEl.innerHTML = html;
             summarySection.classList.remove('hidden-section');
+        }
+
+        const discountPreview = document.getElementById('discountAmountPreview');
+        if (discountPreview) {
+            const productsTotal = this.currentProducts.reduce((sum, p) => sum + (p.sellingPrice != null ? p.sellingPrice : p.price || 0), 0);
+            const { discountPct, discountValue } = this._getDiscountInfo(productsTotal);
+            discountPreview.textContent = discountValue > 0
+                ? `يُخصم ${discountValue.toFixed(2)} ج.م من الإجمالي (${discountPct}%)`
+                : '';
         }
 
         const depositInput = document.querySelector('input[name="deposit"]');
@@ -7445,3 +8003,8 @@ const OrderProducts = {
 
 // Expose OrderProducts globally for HTML onclick handlers
 window.OrderProducts = OrderProducts;
+window.DesignFileStore = DesignFileStore;
+window.DesignCloudStore = DesignCloudStore;
+window.productHasDesignFile = productHasDesignFile;
+window.resolveProductDesignUrl = resolveProductDesignUrl;
+window.resolveProductDesignUrlAsync = resolveProductDesignUrlAsync;
