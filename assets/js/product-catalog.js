@@ -1131,15 +1131,53 @@ const ProductCatalog = {
         }
     },
 
+    _sectionTitleHtml(icon, title, subtitle) {
+        return `<div class="flex items-center gap-3 mb-4 px-1">
+            <div class="w-9 h-9 rounded-xl bg-primary/5 flex items-center justify-center"><i class="fas ${icon} text-primary"></i></div>
+            <div>
+                <h4 class="font-black text-lg text-gray-900 leading-tight">${title}</h4>
+                <p class="text-xs text-gray-400 mt-0.5">${subtitle}</p>
+            </div>
+        </div>`;
+    },
+
     renderPicker() {
         const grid = document.getElementById('catalogPickerGrid');
         if (!grid) return;
+        grid.className = 'space-y-9';
+
+        let machinesHtml = '';
+        if (typeof PrintMachines !== 'undefined') {
+            const cards = PrintMachines.getAll().map(m => PrintMachines.cardHtml(m, {
+                onclick: m.pricingCategory ? `ProductCatalog.selectMachine('${m.id}')` : null
+            })).join('');
+            machinesHtml = `<section>
+                ${this._sectionTitleHtml('fa-industry', 'الماكينات', 'اختر الماكينة لتجهيز الصنف وحساب السعر')}
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">${cards}</div>
+            </section>`;
+        }
+
         const products = CatalogSvc.getActive();
-        if (!products.length) {
-            grid.innerHTML = '<p class="text-center text-gray-400 py-12 col-span-full">لا توجد منتجات في الكتالوج</p>';
+        const productsHtml = products.length
+            ? `<section>
+                ${this._sectionTitleHtml('fa-box-open', 'أصناف جاهزة', 'منتجات الكتالوج بمواصفات وأسعار محفوظة')}
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-5 sm:gap-6">${products.map(p => this._pickerCardHtml(p)).join('')}</div>
+            </section>`
+            : '';
+
+        grid.innerHTML = machinesHtml + productsHtml
+            || '<p class="text-center text-gray-400 py-12">لا توجد منتجات في الكتالوج</p>';
+    },
+
+    selectMachine(machineId) {
+        const machine = (typeof PrintMachines !== 'undefined') ? PrintMachines.getById(machineId) : null;
+        if (!machine || !machine.pricingCategory) return;
+        closeModal('catalogPickerModal');
+        if (typeof OrderProducts === 'undefined' || !OrderProducts.selectProduct) {
+            Swal.fire('تنبيه', 'تعذر فتح إعدادات هذه الماكينة', 'warning');
             return;
         }
-        grid.innerHTML = products.map(p => this._pickerCardHtml(p)).join('');
+        OrderProducts.selectProduct(machine.pricingCategory);
     },
 
     openGroup(groupId) {
