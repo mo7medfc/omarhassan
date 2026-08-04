@@ -93,7 +93,7 @@ const PricingAdmin = {
             return;
         }
 
-        // Show category selection view — Modern grouped layout
+        // Machines-only hub — الأصناف القديمة مخفية، الوصول لها عبر الماكينات
         const _cats = [
             { group: 'طباعة وورق', emoji: '🖨️', items: [
                 { id: 'Offset', name: 'أوفست', icon: 'fa-print', color: '#4f46e5', bg: '#eef2ff' },
@@ -147,74 +147,34 @@ const PricingAdmin = {
             ]},
         ];
 
-        const renderCard = (item) => `
-            <div onclick="PricingAdmin.render('${item.id}')" class="category-card group cursor-pointer flex items-center gap-4 p-4 rounded-2xl border border-gray-100 bg-white hover:shadow-xl hover:scale-[1.02] hover:border-transparent transition-all duration-200" style="min-height:72px" data-name="${item.name}">
-                <div class="shrink-0 w-12 h-12 rounded-xl flex items-center justify-center shadow-sm" style="background:${item.bg}">
-                    <i class="fas ${item.icon} text-lg" style="color:${item.color}"></i>
-                </div>
-                <div class="flex-1 min-w-0">
-                    <h4 class="font-bold text-sm text-gray-800 truncate group-hover:text-gray-950 transition">${item.name}</h4>
-                </div>
-                <i class="fas fa-chevron-left text-gray-300 group-hover:text-gray-500 text-xs transition"></i>
-            </div>`;
-
-        const renderGroup = (g) => `
-            <div class="mb-8 pricing-group">
-                <div class="flex items-center gap-2 mb-3 px-1">
-                    <span class="text-xl">${g.emoji}</span>
-                    <h3 class="font-extrabold text-base text-gray-700 tracking-tight">${g.group}</h3>
-                    <span class="text-[11px] text-gray-400 font-semibold bg-gray-100 px-2 py-0.5 rounded-full">${g.items.length}</span>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                    ${g.items.map(renderCard).join('')}
-                </div>
-            </div>`;
-
         content.innerHTML = `
             <div class="mb-6">
                 <div class="flex flex-wrap items-center justify-between gap-4 mb-5">
                     <div>
                         <h3 class="text-2xl font-extrabold text-gray-900">إدارة التسعير</h3>
-                        <p class="text-sm text-gray-500 mt-1">اختر الماكينة أو الصنف لتعديل الأسعار</p>
+                        <p class="text-sm text-gray-500 mt-1">اختر الماكينة لتعديل أسعار التكلفة والبيع</p>
                     </div>
                     <div class="relative">
                         <i class="fas fa-search absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none"></i>
-                        <input id="pricingSearchInput" type="text" placeholder="ابحث عن صنف..." oninput="PricingAdmin._filterCategories(this.value)" class="w-64 pr-9 pl-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold placeholder-gray-400 focus:outline-none focus:border-brandGold focus:ring-2 focus:ring-brandGold/20 transition">
+                        <input id="pricingSearchInput" type="text" placeholder="ابحث عن ماكينة..." oninput="PricingAdmin._filterCategories(this.value)" class="w-64 pr-9 pl-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold placeholder-gray-400 focus:outline-none focus:border-brandGold focus:ring-2 focus:ring-brandGold/20 transition">
                     </div>
-                </div>
-                ${typeof PrintMachines !== 'undefined' ? PrintMachines.galleryHtml() : ''}
-                <div class="flex flex-wrap gap-2 mb-5" id="pricingGroupTabs">
-                    <button onclick="PricingAdmin._filterGroup('')" class="px-3 py-1.5 rounded-full text-xs font-bold bg-gray-900 text-white transition hover:bg-gray-700 _pg_tab _pg_active">الكل</button>
-                    ${_cats.map(g => `<button onclick="PricingAdmin._filterGroup('${g.group}')" class="px-3 py-1.5 rounded-full text-xs font-bold bg-gray-100 text-gray-600 transition hover:bg-gray-200 _pg_tab">${g.emoji} ${g.group}</button>`).join('')}
                 </div>
             </div>
             <div id="pricingCategoriesContainer">
-                ${_cats.map(renderGroup).join('')}
+                ${typeof PrintMachines !== 'undefined' ? PrintMachines.galleryHtml() : ''}
             </div>
         `;
 
-        // Store categories data for filtering
+        // Store categories data (used by legacy direct-category navigation)
         this._catGroups = _cats;
     },
 
     _filterCategories(query) {
         const q = (query || '').trim().toLowerCase();
-        const cards = document.querySelectorAll('#pricingCategoriesContainer .category-card');
-        const groups = document.querySelectorAll('#pricingCategoriesContainer .pricing-group');
-        if (!q) {
-            cards.forEach(c => c.style.display = '');
-            groups.forEach(g => g.style.display = '');
-            return;
-        }
-        groups.forEach(g => {
-            let hasVisible = false;
-            g.querySelectorAll('.category-card').forEach(c => {
-                const name = (c.getAttribute('data-name') || '').toLowerCase();
-                const match = name.includes(q);
-                c.style.display = match ? '' : 'none';
-                if (match) hasVisible = true;
-            });
-            g.style.display = hasVisible ? '' : 'none';
+        const cards = document.querySelectorAll('#pricingCategoriesContainer .machine-card');
+        cards.forEach(c => {
+            const name = (c.getAttribute('data-name') || '').toLowerCase();
+            c.style.display = (!q || name.includes(q)) ? '' : 'none';
         });
     },
 

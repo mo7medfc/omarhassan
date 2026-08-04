@@ -121,11 +121,18 @@ const PrintMachines = {
         const click = onclick || (machine.ready && machine.pricingCategory
             ? `PricingAdmin.openMachine('${machine.id}')`
             : `Swal.fire({icon:'info',title:'قريباً',text:'تسعير هذه الماكينة هيظهر قريباً',timer:1800,showConfirmButton:false})`);
-        const itemsHint = machine.items && machine.items.length
+        const hasItems = machine.items && machine.items.length;
+        const itemsHint = hasItems
             ? `<p class="text-[11px] text-white/80 mt-1">${machine.items.length} بنود تسعير</p>`
             : '';
+        const itemsList = hasItems
+            ? `<div class="px-3 pb-3 pt-2 bg-white border-t border-gray-100 flex flex-wrap gap-1">
+                ${machine.items.map(it => `<span class="text-[10px] font-bold text-gray-600 bg-gray-100 rounded-full px-2 py-0.5">${it.nameAr}</span>`).join('')}
+               </div>`
+            : '';
+        const searchName = [machine.nameAr, ...(machine.items || []).map(i => i.nameAr)].join(' ');
         return `
-        <button type="button" onclick="${click}" class="group text-right rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-sm hover:shadow-xl hover:scale-[1.02] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2" style="focus-ring-color:${machine.color}">
+        <button type="button" onclick="${click}" data-name="${searchName}" class="machine-card group text-right rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-sm hover:shadow-xl hover:scale-[1.02] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2" style="focus-ring-color:${machine.color}">
             <div class="relative aspect-[4/3] bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden">
                 <img src="${machine.image}" alt="${machine.nameAr}" loading="lazy"
                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -139,6 +146,7 @@ const PrintMachines = {
                 <h4 class="font-extrabold text-sm text-white leading-snug">${machine.nameAr}</h4>
                 ${itemsHint}
             </div>
+            ${itemsList}
         </button>`;
     },
 
