@@ -1,4 +1,4 @@
-// Digital Printing — Sheet-based only, max 32×47 cm
+// Digital Printing — Sheet-based only, sheet 31.5×46.5 cm
 // Cost/Sell fully separated: digital_prices_cost, digital_prices_sell
 
 const DigitalPrintingPricing = {
@@ -7,8 +7,9 @@ const DigitalPrintingPricing = {
     COST_COLLECTION: 'digital_prices_cost',
     CONFIG_DOC_ID: 'default',
 
-    MAX_SHEET_WIDTH: 32,
-    MAX_SHEET_HEIGHT: 47,
+    SHEET_LABEL: 'فرخ الديجيتال 31.5 × 46.5 سم',
+    MAX_SHEET_WIDTH: 31.5,
+    MAX_SHEET_HEIGHT: 46.5,
 
     PAPER_TYPES: [
         { id: 'plain_100', nameAr: 'ورق طبع 100 جرام', laminationAllowed: false, cellophaneSingle: false, cellophaneDouble: false },

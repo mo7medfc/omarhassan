@@ -5612,7 +5612,7 @@ const OrderProducts = {
                     <div id="digitalPrintingStanRollSummary" class="bg-violet-50 p-4 rounded-xl border border-violet-200 text-sm">الإجمالي: 0 ج.م</div>
                 </div>
                 <div id="digitalPrintingSheetForm" class="space-y-4 border-t border-gray-200 pt-4">
-                <p class="text-sm text-gray-600 mb-2">الحد الأقصى للقطعة: 32×47 سم. الورق والطباعة حسب اللوحة.</p>
+                <p class="text-sm text-gray-600 mb-2">الحد الأقصى للقطعة: 31.5×46.5 سم (فرخ الديجيتال). الورق والطباعة حسب الفرخ.</p>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                         <label class="block text-sm font-bold text-gray-700 mb-1">الكمية (عدد القطع) <span class="text-red-500">*</span></label>
@@ -5786,7 +5786,7 @@ const OrderProducts = {
                 return;
             }
             if (!DP.isSizeAllowed(w, h)) {
-                summaryEl.innerHTML = '<span class="text-red-600">المقاس يتجاوز 32×47 سم. غير مسموح في قسم الدجيتال.</span>';
+                summaryEl.innerHTML = '<span class="text-red-600">المقاس يتجاوز فرخ الديجيتال 31.5×46.5 سم. غير مسموح في قسم الدجيتال.</span>';
                 return;
             }
             const extrasInputs = getExtrasInputs();
@@ -5885,7 +5885,7 @@ const OrderProducts = {
                 return;
             }
             if (!DP.isSizeAllowed(w, h)) {
-                Swal.fire('خطأ', 'المقاس يتجاوز 32×47 سم. غير مسموح في قسم الدجيتال.', 'error');
+                Swal.fire('خطأ', 'المقاس يتجاوز فرخ الديجيتال 31.5×46.5 سم. غير مسموح في قسم الدجيتال.', 'error');
                 return;
             }
             const extrasInputs = getExtrasInputs();

@@ -7000,7 +7000,7 @@ const PricingAdmin = {
                                 <div>
                                     <p class="text-xs font-bold text-violet-600 mb-1">ماكينة الطباعة</p>
                                     <h3 class="text-2xl font-extrabold text-gray-900">ماكينة طباعة رقمية</h3>
-                                    <p class="text-sm text-gray-500 mt-1">تسعير الورق — لوحة 32×47 سم · يشمل الطباعة</p>
+                                    <p class="text-sm text-gray-500 mt-1">تسعير الورق — فرخ 31.5×46.5 سم · يشمل الطباعة</p>
                                 </div>
                                 <button onclick="PricingAdmin.render()" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-xl font-bold hover:bg-gray-200 transition text-sm">
                                     <i class="fas fa-arrow-right ml-1"></i> رجوع للماكينات
