@@ -9,7 +9,7 @@ const PrintMachines = {
             nameAr: 'ماكينة طباعة أوفست',
             image: 'assets/images/machines/offset.jpg',
             pricingCategory: 'Offset',
-            ready: true,
+            ready: false,
             color: '#4f46e5',
             items: []
         },
@@ -36,7 +36,7 @@ const PrintMachines = {
             nameAr: 'ماكينة طباعة أوت دور',
             image: 'assets/images/machines/outdoor.jpg',
             pricingCategory: 'Outdoor',
-            ready: true,
+            ready: false,
             color: '#ea580c',
             items: []
         },
@@ -45,7 +45,7 @@ const PrintMachines = {
             nameAr: 'ماكينة طباعة إن دور',
             image: 'assets/images/machines/indoor.jpg',
             pricingCategory: 'Indoor',
-            ready: true,
+            ready: false,
             color: '#9333ea',
             items: []
         },
@@ -54,7 +54,7 @@ const PrintMachines = {
             nameAr: 'ماكينة طباعة UV فلات بيد',
             image: 'assets/images/machines/uv-flatbed.jpg',
             pricingCategory: 'UVPrinting',
-            ready: true,
+            ready: false,
             color: '#7c3aed',
             items: []
         },
@@ -63,7 +63,7 @@ const PrintMachines = {
             nameAr: 'ماكينة طباعة سبلميشن',
             image: 'assets/images/machines/sublimation.jpg',
             pricingCategory: 'SublimationGift',
-            ready: true,
+            ready: false,
             color: '#c026d3',
             items: []
         },
@@ -72,7 +72,7 @@ const PrintMachines = {
             nameAr: 'طابعة إن جيت',
             image: 'assets/images/machines/inkjet.jpg',
             pricingCategory: 'inkjet_paper_printing',
-            ready: true,
+            ready: false,
             color: '#0ea5e9',
             items: []
         },
@@ -81,7 +81,7 @@ const PrintMachines = {
             nameAr: 'ماكينة طباعة DTF',
             image: 'assets/images/machines/dtf.jpg',
             pricingCategory: 'DTF',
-            ready: true,
+            ready: false,
             color: '#db2777',
             items: []
         },
@@ -99,7 +99,7 @@ const PrintMachines = {
             nameAr: 'ماكينة أختام',
             image: 'assets/images/machines/stamps.jpg',
             pricingCategory: 'Stamps',
-            ready: true,
+            ready: false,
             color: '#e11d48',
             items: []
         }

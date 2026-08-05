@@ -1149,7 +1149,7 @@ const ProductCatalog = {
         let machinesHtml = '';
         if (typeof PrintMachines !== 'undefined') {
             const cards = PrintMachines.getAll().map(m => PrintMachines.cardHtml(m, {
-                onclick: m.pricingCategory ? `ProductCatalog.selectMachine('${m.id}')` : null
+                onclick: (m.ready && m.pricingCategory) ? `ProductCatalog.selectMachine('${m.id}')` : null
             })).join('');
             machinesHtml = `<section>
                 ${this._sectionTitleHtml('fa-industry', 'الماكينات', 'اختر الماكينة لتجهيز الصنف وحساب السعر')}
@@ -1171,7 +1171,7 @@ const ProductCatalog = {
 
     selectMachine(machineId) {
         const machine = (typeof PrintMachines !== 'undefined') ? PrintMachines.getById(machineId) : null;
-        if (!machine || !machine.pricingCategory) return;
+        if (!machine || !machine.ready || !machine.pricingCategory) return;
         closeModal('catalogPickerModal');
         if (typeof OrderProducts === 'undefined' || !OrderProducts.selectProduct) {
             Swal.fire('تنبيه', 'تعذر فتح إعدادات هذه الماكينة', 'warning');
