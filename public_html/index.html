@@ -10956,6 +10956,25 @@ ${'<'}/script></body></html>`;
         }
         console.log('✅ OH System: All product pricing modules loaded');
     </script>
+
+    <!-- Auto-refresh when a newer build is deployed (browsers cache index.html) -->
+    <script>
+    (function () {
+        var CURRENT_BUILD = '20260805-030827';
+        fetch('build.txt?t=' + Date.now(), { cache: 'no-store' })
+            .then(function (r) { return r.ok ? r.text() : null; })
+            .then(function (text) {
+                if (!text) return;
+                var latest = text.trim();
+                if (!latest || latest === CURRENT_BUILD) return;
+                // Guard against reload loops if the browser keeps serving the cached page
+                if (sessionStorage.getItem('ohBuildReload') === latest) return;
+                sessionStorage.setItem('ohBuildReload', latest);
+                location.reload();
+            })
+            .catch(function () {});
+    })();
+    </script>
 </body>
 </html>
  
