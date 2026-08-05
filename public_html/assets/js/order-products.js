@@ -5539,7 +5539,6 @@ const OrderProducts = {
 
         const paperTypes = DP.PAPER_TYPES || [];
         const defaultPaper = paperTypes[0] ? paperTypes[0].id : '';
-        const stanRollSizes = DP.STAN_ROLL_SIZES || [];
 
         const buildParams = (source, paperId, printingSide, laminationType, laminationSide, qty, w, h, extrasInputs) => {
             const pp = source.paperPrices[paperId] || {};
@@ -5591,27 +5590,7 @@ const OrderProducts = {
 
         content.innerHTML = `
             <form id="digitalPrintingConfigForm" class="space-y-4">
-                <div class="mb-4">
-                    <p class="font-bold text-gray-700 mb-2">نوع المنتج</p>
-                    <div class="flex gap-4">
-                        <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="digitalPrintingBand" value="sheet" class="text-brandGold" checked> طباعة بالفرخ</label>
-                        <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="digitalPrintingBand" value="stan_roll" class="text-brandGold"> بكرة ستان</label>
-                    </div>
-                </div>
-                <div id="digitalPrintingStanRollForm" class="hidden-section space-y-4 border-t border-gray-200 pt-4">
-                    <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-1">المقاس <span class="text-red-500">*</span></label>
-                        <select id="digitalPrintingStanRollSize" class="w-full border border-gray-300 p-3 rounded-xl focus:border-brandGold outline-none">
-                            ${stanRollSizes.map(s => `<option value="${s.id}">${s.nameAr}</option>`).join('')}
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-1">الكمية (عدد البكر) <span class="text-red-500">*</span></label>
-                        <input type="number" id="digitalPrintingStanRollQty" step="1" min="1" value="1" class="w-full border border-gray-300 p-3 rounded-xl focus:border-brandGold outline-none">
-                    </div>
-                    <div id="digitalPrintingStanRollSummary" class="bg-violet-50 p-4 rounded-xl border border-violet-200 text-sm">الإجمالي: 0 ج.م</div>
-                </div>
-                <div id="digitalPrintingSheetForm" class="space-y-4 border-t border-gray-200 pt-4">
+                <div id="digitalPrintingSheetForm" class="space-y-4">
                 <p class="text-sm text-gray-600 mb-2">الحد الأقصى للقطعة: 31.5×46.5 سم (فرخ الديجيتال). الورق والطباعة حسب الفرخ.</p>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
@@ -5717,34 +5696,6 @@ const OrderProducts = {
         const sideEl = document.getElementById('digitalPrintingPrintingSide');
         const summaryEl = document.getElementById('digitalPrintingSummary');
         const laminationHint = document.getElementById('digitalPrintingLaminationHint');
-        const stanRollForm = document.getElementById('digitalPrintingStanRollForm');
-        const sheetForm = document.getElementById('digitalPrintingSheetForm');
-        const stanRollSummaryEl = document.getElementById('digitalPrintingStanRollSummary');
-        const stanRollSizeEl = document.getElementById('digitalPrintingStanRollSize');
-        const stanRollQtyEl = document.getElementById('digitalPrintingStanRollQty');
-
-        const toggleDigitalBand = () => {
-            const band = document.querySelector('input[name="digitalPrintingBand"]:checked')?.value || 'sheet';
-            const isStanRoll = band === 'stan_roll';
-            if (stanRollForm) stanRollForm.classList.toggle('hidden-section', !isStanRoll);
-            if (sheetForm) sheetForm.classList.toggle('hidden-section', isStanRoll);
-            if (summaryEl) summaryEl.classList.toggle('hidden-section', isStanRoll);
-            if (stanRollSummaryEl) stanRollSummaryEl.classList.toggle('hidden-section', !isStanRoll);
-            if (isStanRoll) runStanRollCalc();
-        };
-
-        const runStanRollCalc = () => {
-            const sizeId = stanRollSizeEl?.value || (stanRollSizes[0] && stanRollSizes[0].id);
-            const qty = parseInt(stanRollQtyEl?.value || 1, 10);
-            const unitPrice = (sellData.stanRoll && sellData.stanRoll[sizeId] != null) ? parseFloat(sellData.stanRoll[sizeId]) : 0;
-            const total = qty * unitPrice;
-            if (stanRollSummaryEl) stanRollSummaryEl.innerHTML = `الإجمالي: ${total.toFixed(2)} ج.م`;
-        };
-
-        document.querySelectorAll('input[name="digitalPrintingBand"]').forEach(r => { r.addEventListener('change', toggleDigitalBand); });
-        stanRollSizeEl?.addEventListener('change', runStanRollCalc);
-        stanRollQtyEl?.addEventListener('input', runStanRollCalc);
-
         const updateLaminationState = () => {
             const paperId = paperEl?.value || '';
             const canDouble = DP.canLaminationDouble(paperId);
@@ -5837,43 +5788,9 @@ const OrderProducts = {
         });
 
         updateLaminationState();
-        toggleDigitalBand();
 
         document.getElementById('digitalPrintingConfigForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const band = document.querySelector('input[name="digitalPrintingBand"]:checked')?.value || 'sheet';
-            if (band === 'stan_roll') {
-                const sizeId = stanRollSizeEl?.value || (stanRollSizes[0] && stanRollSizes[0].id);
-                const qty = parseInt(stanRollQtyEl?.value || 1, 10);
-                const unitPriceSell = (sellData.stanRoll && sellData.stanRoll[sizeId] != null) ? parseFloat(sellData.stanRoll[sizeId]) : 0;
-                const unitPriceCost = (costData.stanRoll && costData.stanRoll[sizeId] != null) ? parseFloat(costData.stanRoll[sizeId]) : 0;
-                if (qty <= 0) {
-                    Swal.fire('خطأ', 'أدخل الكمية.', 'error');
-                    return;
-                }
-                if (unitPriceSell <= 0) {
-                    Swal.fire('خطأ', 'لم يتم تحديد سعر البيع لهذا المقاس. حدد الأسعار من إدارة التسعير (قسم الدجيتال — بكرة ستان).', 'error');
-                    return;
-                }
-                const sizeInfo = DP.getStanRollSizeById(sizeId);
-                this.addProduct({
-                    id: Date.now(),
-                    type: 'digital_printing',
-                    band: 'stan_roll',
-                    productId: sizeId,
-                    productName: `قسم الدجيتال — بكرة ستان`,
-                    stanRollSizeId: sizeId,
-                    stanRollSizeNameAr: sizeInfo ? sizeInfo.nameAr : sizeId,
-                    quantity: qty,
-                    unitPrice: unitPriceSell,
-                    price: qty * unitPriceSell,
-                    sellingPrice: qty * unitPriceSell,
-                    productionCost: qty * unitPriceCost
-                });
-                closeModal('digitalPrintingConfigModal');
-                Swal.fire('تم', 'تم إضافة المنتج بنجاح', 'success');
-                return;
-            }
             const qty = parseInt(quantityEl?.value || 0, 10);
             const w = parseFloat(widthEl?.value || 0);
             const h = parseFloat(heightEl?.value || 0);
